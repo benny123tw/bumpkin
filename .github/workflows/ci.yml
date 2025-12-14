@@ -11,35 +11,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "stable"
           cache: true
 
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          args: --timeout=5m
+      - name: Set up Just
+        uses: extractions/setup-just@v2
+
+      - name: Run linter
+        run: just lint
 
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "stable"
           cache: true
 
+      - name: Set up Just
+        uses: extractions/setup-just@v2
+
       - name: Run tests
-        run: go test -v -race -coverprofile=coverage.out ./...
+        run: just test-cov
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4
@@ -54,26 +57,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "stable"
           cache: true
 
+      - name: Set up Just
+        uses: extractions/setup-just@v2
+
       - name: Build
-        run: go build -v ./cmd/bumpkin
+        run: just build
 
   dependency-check:
     name: Dependency Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "stable"
           cache: true
