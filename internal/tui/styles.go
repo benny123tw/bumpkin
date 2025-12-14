@@ -92,7 +92,7 @@ var (
 	// Recommended indicator
 	RecommendedStyle = lipgloss.NewStyle().
 				Foreground(successColor).
-				Italic(true)
+				Italic(false)
 )
 
 // Commit type styles for colored badges
