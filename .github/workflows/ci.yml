@@ -19,11 +19,11 @@ jobs:
           go-version: "stable"
           cache: true
 
-      - name: Set up Just
-        uses: extractions/setup-just@v2
-
-      - name: Run linter
-        run: just lint
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+          args: --timeout=5m
 
   test:
     name: Test
