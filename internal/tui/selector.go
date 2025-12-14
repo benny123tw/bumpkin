@@ -153,16 +153,27 @@ func RenderVersionSelector(options []VersionOption, selected int) string {
 			style = SelectedStyle
 		}
 
-		// Add recommendation indicator
+		// Build label with padding calculated on raw text length
 		label := opt.Label
+		recommendedSuffix := ""
 		if opt.IsRecommended {
-			label = opt.Label + " " + RecommendedStyle.Render("(recommended)")
+			recommendedSuffix = " " + RecommendedStyle.Render("(recommended)")
+			// "(recommended)" is 13 chars, plus 1 space = 14 chars
 		}
 
+		// Pad the base label, then append styled suffix
+		// This ensures arrow alignment is based on raw label length
+		labelWidth := 24
+		if opt.IsRecommended {
+			// Reduce padding to account for the suffix text length
+			labelWidth = 24 - 14 // 14 = len(" (recommended)")
+		}
+		paddedLabel := fmt.Sprintf("%-*s", labelWidth, label) + recommendedSuffix
+
 		line := fmt.Sprintf(
-			"%s%-24s %s %s",
+			"%s%s %s %s",
 			cursor,
-			label,
+			paddedLabel,
 			IconArrow,
 			NewVersionStyle.Render(opt.NewVersion),
 		)
