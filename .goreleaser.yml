@@ -41,9 +41,11 @@ builds:
       - -X github.com/benny123tw/bumpkin/internal/cli.GitCommit={{.FullCommit}}
     binary: >-
       {{ .ProjectName }}-
-      {{- .Version }}-
+      {{- if .IsSnapshot }}{{ .Branch }}-
+      {{- else }}{{- .Version }}-{{ end }}
       {{- .Os }}-
       {{- if eq .Arch "amd64" }}amd64
+      {{- else if eq .Arch "amd64_v1" }}amd64
       {{- else if eq .Arch "386" }}386
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}-{{ .Arm }}{{ end }}
@@ -56,6 +58,9 @@ archives:
 
 checksum:
   name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}"
 
 changelog:
   use: github
