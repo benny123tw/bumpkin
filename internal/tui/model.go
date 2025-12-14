@@ -27,11 +27,14 @@ const (
 
 // Config contains configuration for the TUI
 type Config struct {
-	Repository *git.Repository
-	Prefix     string
-	Remote     string
-	DryRun     bool
-	NoPush     bool
+	Repository   *git.Repository
+	Prefix       string
+	Remote       string
+	DryRun       bool
+	NoPush       bool
+	NoHooks      bool
+	PreTagHooks  []string
+	PostTagHooks []string
 }
 
 // Model is the main TUI model
@@ -353,6 +356,9 @@ func (m Model) executeVersion() tea.Msg {
 		Remote:        m.config.Remote,
 		DryRun:        m.config.DryRun,
 		NoPush:        m.config.NoPush || !m.hasRemote,
+		NoHooks:       m.config.NoHooks,
+		PreTagHooks:   m.config.PreTagHooks,
+		PostTagHooks:  m.config.PostTagHooks,
 	}
 
 	result, err := executor.Execute(context.Background(), req)

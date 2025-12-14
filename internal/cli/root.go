@@ -302,13 +302,16 @@ func runNonInteractive(cmd *cobra.Command, repo *git.Repository, cfg *config.Con
 	return outputText(cmd, result)
 }
 
-func runInteractive(repo *git.Repository, _ *config.Config) error {
+func runInteractive(repo *git.Repository, cfg *config.Config) error {
 	tuiCfg := tui.Config{
-		Repository: repo,
-		Prefix:     flagPrefix,
-		Remote:     flagRemote,
-		DryRun:     flagDryRun,
-		NoPush:     flagNoPush,
+		Repository:   repo,
+		Prefix:       flagPrefix,
+		Remote:       flagRemote,
+		DryRun:       flagDryRun,
+		NoPush:       flagNoPush,
+		NoHooks:      flagNoHooks,
+		PreTagHooks:  cfg.Hooks.PreTag,
+		PostTagHooks: cfg.Hooks.PostTag,
 	}
 
 	return tui.Run(tuiCfg)
