@@ -1,7 +1,6 @@
 package hooks
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -13,6 +12,16 @@ import (
 
 // RunHook executes a single hook and returns the result
 func RunHook(ctx context.Context, hook Hook, hookCtx *HookContext) *HookResult {
+	return RunHookWithOutput(ctx, hook, hookCtx, os.Stdout, os.Stderr)
+}
+
+// RunHookWithOutput executes a single hook with custom output writers
+func RunHookWithOutput(
+	ctx context.Context,
+	hook Hook,
+	hookCtx *HookContext,
+	stdout, stderr *os.File,
+) *HookResult {
 	start := time.Now()
 
 	result := &HookResult{
@@ -40,15 +49,13 @@ func RunHook(ctx context.Context, hook Hook, hookCtx *HookContext) *HookResult {
 	// Set environment variables
 	cmd.Env = append(os.Environ(), hookCtx.ToEnv()...)
 
-	// Capture output
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	// Stream output directly to stdout/stderr
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
 
 	// Run command
 	err := cmd.Run()
 	result.Duration = time.Since(start)
-	result.Output = stdout.String() + stderr.String()
 
 	if err != nil {
 		result.Success = false

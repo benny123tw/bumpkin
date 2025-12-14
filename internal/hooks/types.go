@@ -43,12 +43,12 @@ func (c *HookContext) ToEnv() []string {
 	return []string{
 		"BUMPKIN_VERSION=" + c.Version,
 		"BUMPKIN_PREVIOUS_VERSION=" + c.PreviousVersion,
-		"BUMPKIN_TAG_NAME=" + c.TagName,
+		"BUMPKIN_TAG=" + c.TagName,
 		"BUMPKIN_PREFIX=" + c.Prefix,
 		"BUMPKIN_REMOTE=" + c.Remote,
-		"BUMPKIN_COMMIT_HASH=" + c.CommitHash,
+		"BUMPKIN_COMMIT=" + c.CommitHash,
 		"BUMPKIN_DRY_RUN=" + boolToString(c.DryRun),
-		// Also provide VERSION for convenience
+		// Short aliases for convenience
 		"VERSION=" + c.Version,
 		"TAG=" + c.TagName,
 	}

@@ -26,8 +26,8 @@ func TestRunHook(t *testing.T) {
 	result := RunHook(ctx, hook, hookCtx)
 
 	require.True(t, result.Success)
-	assert.Contains(t, result.Output, "hello")
 	assert.NoError(t, result.Error)
+	// Output is now streamed to stdout, not captured
 }
 
 // T094: Test for hook environment variables
@@ -43,11 +43,12 @@ func TestRunHook_EnvironmentVariables(t *testing.T) {
 		DryRun:          false,
 	}
 
+	// Test that env vars are set by checking exit code of a test command
 	var cmd string
 	if runtime.GOOS == "windows" {
-		cmd = "echo %BUMPKIN_VERSION%"
+		cmd = "if \"%BUMPKIN_VERSION%\"==\"1.2.3\" exit 0"
 	} else {
-		cmd = "echo $BUMPKIN_VERSION"
+		cmd = "test \"$BUMPKIN_VERSION\" = \"1.2.3\""
 	}
 
 	hook := Hook{
@@ -58,7 +59,7 @@ func TestRunHook_EnvironmentVariables(t *testing.T) {
 	result := RunHook(ctx, hook, hookCtx)
 
 	require.True(t, result.Success)
-	assert.Contains(t, result.Output, "1.2.3")
+	// Output is now streamed to stdout, env vars verified via exit code
 }
 
 // T096: Test for hook failure (non-zero exit)
@@ -172,10 +173,10 @@ func TestHookContext_ToEnv(t *testing.T) {
 
 	assert.Contains(t, env, "BUMPKIN_VERSION=1.2.3")
 	assert.Contains(t, env, "BUMPKIN_PREVIOUS_VERSION=1.2.2")
-	assert.Contains(t, env, "BUMPKIN_TAG_NAME=v1.2.3")
+	assert.Contains(t, env, "BUMPKIN_TAG=v1.2.3")
 	assert.Contains(t, env, "BUMPKIN_PREFIX=v")
 	assert.Contains(t, env, "BUMPKIN_REMOTE=origin")
-	assert.Contains(t, env, "BUMPKIN_COMMIT_HASH=abc123def")
+	assert.Contains(t, env, "BUMPKIN_COMMIT=abc123def")
 	assert.Contains(t, env, "BUMPKIN_DRY_RUN=true")
 	assert.Contains(t, env, "VERSION=1.2.3")
 	assert.Contains(t, env, "TAG=v1.2.3")
