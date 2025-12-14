@@ -3,6 +3,8 @@
 Auto-generated from all feature plans. Last updated: 2025-12-14
 
 ## Active Technologies
+- Go 1.24+ (002-release-integration)
+- N/A (file-based config: `.bumpkin.yml`) (002-release-integration)
 
 - Go 1.21+ (001-version-tagger)
 
@@ -22,6 +24,7 @@ tests/
 Go 1.21+: Follow standard conventions
 
 ## Recent Changes
+- 002-release-integration: Added Go 1.24+
 
 - 001-version-tagger: Added Go 1.21+
 
