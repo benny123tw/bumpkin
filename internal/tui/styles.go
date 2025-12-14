@@ -88,6 +88,11 @@ var (
 			Foreground(warningColor).
 			Background(lipgloss.Color("235")).
 			Padding(0, 1)
+
+	// Recommended indicator
+	RecommendedStyle = lipgloss.NewStyle().
+				Foreground(successColor).
+				Italic(true)
 )
 
 // Icons

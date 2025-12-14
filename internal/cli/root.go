@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/benny123tw/bumpkin/internal/conventional"
 	"github.com/benny123tw/bumpkin/internal/executor"
 	"github.com/benny123tw/bumpkin/internal/git"
 	"github.com/benny123tw/bumpkin/internal/tui"
@@ -23,10 +24,11 @@ var (
 // Flag variables
 var (
 	// Bump type flags (mutually exclusive)
-	flagPatch      bool
-	flagMinor      bool
-	flagMajor      bool
-	flagSetVersion string
+	flagPatch        bool
+	flagMinor        bool
+	flagMajor        bool
+	flagSetVersion   string
+	flagConventional bool
 
 	// Behavior flags
 	flagPrefix      string
@@ -91,6 +93,13 @@ func addFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&flagMinor, "minor", false, "Bump minor version (x.Y.0)")
 	cmd.Flags().BoolVar(&flagMajor, "major", false, "Bump major version (X.0.0)")
 	cmd.Flags().StringVar(&flagSetVersion, "set-version", "", "Set specific version")
+	cmd.Flags().BoolVarP(
+		&flagConventional,
+		"conventional",
+		"c",
+		false,
+		"Auto-detect bump type from conventional commits",
+	)
 
 	// Behavior flags
 	cmd.Flags().StringVarP(&flagPrefix, "prefix", "p", "v", "Tag prefix")
@@ -116,7 +125,8 @@ func runRoot(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Determine if we're in non-interactive mode
-	isNonInteractive := flagPatch || flagMinor || flagMajor || flagSetVersion != ""
+	isNonInteractive := flagPatch || flagMinor || flagMajor || flagSetVersion != "" ||
+		flagConventional
 
 	// Open the repository from current directory
 	repo, err := git.OpenFromCurrent()
@@ -146,10 +156,13 @@ func runNonInteractive(cmd *cobra.Command, repo *git.Repository) error {
 	if flagSetVersion != "" {
 		bumpCount++
 	}
+	if flagConventional {
+		bumpCount++
+	}
 
 	if bumpCount > 1 {
 		err := fmt.Errorf(
-			"only one of --patch, --minor, --major, or --set-version can be specified",
+			"only one of --patch, --minor, --major, --set-version, or --conventional can be specified",
 		)
 		return handleError(cmd, err, "")
 	}
@@ -168,6 +181,9 @@ func runNonInteractive(cmd *cobra.Command, repo *git.Repository) error {
 	case flagSetVersion != "":
 		bumpType = version.BumpCustom
 		customVersion = flagSetVersion
+	case flagConventional:
+		// Analyze commits to determine bump type
+		bumpType = analyzeConventionalCommits(repo)
 	}
 
 	// If not --yes, require confirmation (unless dry-run)
@@ -318,4 +334,34 @@ func Execute() error {
 		os.Exit(1)
 	}
 	return nil
+}
+
+// analyzeConventionalCommits analyzes commits and returns recommended bump type
+func analyzeConventionalCommits(repo *git.Repository) version.BumpType {
+	// Get latest tag
+	latestTag, err := repo.LatestTag(flagPrefix)
+	if err != nil {
+		return version.BumpPatch // Default on error
+	}
+
+	var commits []*git.Commit
+	if latestTag != nil {
+		commits, err = repo.GetCommitsSinceTag(latestTag.Name)
+	} else {
+		commits, err = repo.GetAllCommits()
+	}
+
+	if err != nil || len(commits) == 0 {
+		return version.BumpPatch // Default
+	}
+
+	// Extract commit messages
+	var messages []string
+	for _, c := range commits {
+		messages = append(messages, c.Message)
+	}
+
+	// Analyze and return recommended bump
+	analysis := conventional.AnalyzeCommits(messages)
+	return analysis.RecommendedBump
 }

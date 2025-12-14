@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/benny123tw/bumpkin/internal/conventional"
 	"github.com/benny123tw/bumpkin/internal/executor"
 	"github.com/benny123tw/bumpkin/internal/git"
 	"github.com/benny123tw/bumpkin/internal/version"
@@ -40,9 +41,10 @@ type Model struct {
 	err    error
 
 	// Repository state
-	currentVersion *version.Version
-	commits        []*git.Commit
-	hasRemote      bool
+	currentVersion  *version.Version
+	commits         []*git.Commit
+	hasRemote       bool
+	recommendedBump version.BumpType
 
 	// Selection state
 	versionOptions  []VersionOption
@@ -156,7 +158,30 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.currentVersion = msg.CurrentVersion
 		m.commits = msg.Commits
 		m.hasRemote = msg.HasRemote
-		m.versionOptions = CreateVersionOptions(*m.currentVersion, m.config.Prefix)
+
+		// Analyze commits for recommended bump
+		var commitMessages []string
+		for _, c := range m.commits {
+			commitMessages = append(commitMessages, c.Message)
+		}
+		analysis := conventional.AnalyzeCommits(commitMessages)
+		m.recommendedBump = analysis.RecommendedBump
+
+		// Create version options with recommendation
+		m.versionOptions = CreateVersionOptionsWithRecommendation(
+			*m.currentVersion,
+			m.config.Prefix,
+			m.recommendedBump,
+		)
+
+		// Pre-select the recommended option
+		for i, opt := range m.versionOptions {
+			if opt.BumpType == m.recommendedBump {
+				m.selectedOption = i
+				break
+			}
+		}
+
 		m.state = StateCommitList
 		return m, nil
 

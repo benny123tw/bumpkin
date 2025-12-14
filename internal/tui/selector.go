@@ -9,10 +9,11 @@ import (
 
 // VersionOption represents a version bump option
 type VersionOption struct {
-	Label       string
-	Description string
-	BumpType    version.BumpType
-	NewVersion  string
+	Label         string
+	Description   string
+	BumpType      version.BumpType
+	NewVersion    string
+	IsRecommended bool
 }
 
 // CreateVersionOptions creates version options based on current version
@@ -47,6 +48,24 @@ func CreateVersionOptions(current version.Version, prefix string) []VersionOptio
 	return options
 }
 
+// CreateVersionOptionsWithRecommendation creates options with a recommended bump highlighted
+func CreateVersionOptionsWithRecommendation(
+	current version.Version,
+	prefix string,
+	recommended version.BumpType,
+) []VersionOption {
+	options := CreateVersionOptions(current, prefix)
+
+	// Mark the recommended option
+	for i := range options {
+		if options[i].BumpType == recommended {
+			options[i].IsRecommended = true
+		}
+	}
+
+	return options
+}
+
 // RenderVersionSelector renders the version selector
 func RenderVersionSelector(options []VersionOption, selected int) string {
 	var sb strings.Builder
@@ -59,10 +78,16 @@ func RenderVersionSelector(options []VersionOption, selected int) string {
 			style = SelectedStyle
 		}
 
+		// Add recommendation indicator
+		label := opt.Label
+		if opt.IsRecommended {
+			label = opt.Label + " " + RecommendedStyle.Render("(recommended)")
+		}
+
 		line := fmt.Sprintf(
-			"%s%-8s %s %s",
+			"%s%-24s %s %s",
 			cursor,
-			opt.Label,
+			label,
 			IconArrow,
 			NewVersionStyle.Render(opt.NewVersion),
 		)
