@@ -120,6 +120,27 @@ func TestParse(t *testing.T) {
 			input:       "",
 			expectError: true,
 		},
+		// T119: Additional custom version validation tests
+		{
+			name:     "missing patch version - coerced to 1.0.0",
+			input:    "1.0",
+			expected: Version{Major: 1, Minor: 0, Patch: 0},
+		},
+		{
+			name:     "only major version - coerced to 1.0.0",
+			input:    "1",
+			expected: Version{Major: 1, Minor: 0, Patch: 0},
+		},
+		{
+			name:        "spaces in version",
+			input:       "1.0.0 invalid",
+			expectError: true,
+		},
+		{
+			name:     "double prefix - strips v and parses v1.0.0",
+			input:    "vv1.0.0",
+			expected: Version{Major: 1, Minor: 0, Patch: 0},
+		},
 	}
 
 	for _, tt := range tests {

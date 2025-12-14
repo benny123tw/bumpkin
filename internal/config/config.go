@@ -33,8 +33,6 @@ func Default() *Config {
 // Load loads configuration from the given directory
 // It looks for .bumpkin.yml or .bumpkin.yaml
 func Load(dir string) (*Config, error) {
-	cfg := Default()
-
 	// Try .bumpkin.yml first
 	configPath := filepath.Join(dir, ".bumpkin.yml")
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
@@ -42,11 +40,23 @@ func Load(dir string) (*Config, error) {
 		configPath = filepath.Join(dir, ".bumpkin.yaml")
 		if _, err := os.Stat(configPath); os.IsNotExist(err) {
 			// No config file, return defaults
-			return cfg, nil
+			return Default(), nil
 		}
 	}
 
-	data, err := os.ReadFile(configPath)
+	return LoadFile(configPath)
+}
+
+// LoadFile loads configuration from a specific file path
+func LoadFile(path string) (*Config, error) {
+	cfg := Default()
+
+	// If path doesn't exist, return defaults
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return cfg, nil
+	}
+
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}

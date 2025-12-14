@@ -38,6 +38,7 @@ var (
 	// Behavior flags
 	flagPrefix      string
 	flagRemote      string
+	flagConfig      string
 	flagDryRun      bool
 	flagNoPush      bool
 	flagNoHooks     bool
@@ -116,6 +117,7 @@ func addFlags(cmd *cobra.Command) {
 	// Behavior flags
 	cmd.Flags().StringVarP(&flagPrefix, "prefix", "p", "v", "Tag prefix")
 	cmd.Flags().StringVarP(&flagRemote, "remote", "r", "origin", "Git remote name")
+	cmd.Flags().StringVarP(&flagConfig, "config", "C", ".bumpkin.yml", "Config file path")
 	cmd.Flags().BoolVarP(&flagDryRun, "dry-run", "d", false, "Preview without making changes")
 	cmd.Flags().BoolVar(&flagNoPush, "no-push", false, "Create tag but don't push")
 	cmd.Flags().BoolVar(&flagNoHooks, "no-hooks", false, "Skip hook execution")
@@ -144,7 +146,7 @@ func runRoot(cmd *cobra.Command, _ []string) error {
 	// Open the repository from current directory
 	repo, err := git.OpenFromCurrent()
 	if err != nil {
-		return handleError(cmd, err, "failed to open repository")
+		return handleErrorWithCode(cmd, ExitNotGitRepo, "not a git repository", err)
 	}
 
 	if isNonInteractive {
@@ -186,10 +188,12 @@ func runNonInteractive(cmd *cobra.Command, repo *git.Repository) error {
 	}
 
 	if bumpCount > 1 {
-		err := fmt.Errorf(
+		return handleErrorWithCode(
+			cmd,
+			ExitInvalidArgs,
 			"only one bump type flag can be specified",
+			nil,
 		)
-		return handleError(cmd, err, "")
 	}
 
 	// Determine bump type
@@ -258,8 +262,7 @@ func runNonInteractive(cmd *cobra.Command, repo *git.Repository) error {
 	}
 
 	// Load configuration
-	cwd, _ := os.Getwd()
-	cfg, _ := config.Load(cwd)
+	cfg, _ := config.LoadFile(flagConfig)
 
 	// Execute the bump
 	req := executor.Request{
@@ -301,15 +304,16 @@ func runInteractive(repo *git.Repository) error {
 }
 
 func handleError(cmd *cobra.Command, err error, context string) error {
+	return handleErrorWithCode(cmd, ExitGeneralError, context, err)
+}
+
+func handleErrorWithCode(cmd *cobra.Command, code int, message string, err error) error {
+	exitErr := NewExitError(code, message, err)
 	if flagJSON {
 		//nolint:errcheck // Best effort output
-		outputJSON(cmd, nil, err)
+		outputJSON(cmd, nil, exitErr)
 	}
-
-	if context != "" {
-		return fmt.Errorf("%s: %w", context, err)
-	}
-	return err
+	return exitErr
 }
 
 func outputJSON(cmd *cobra.Command, result *executor.Result, err error) error {
@@ -368,12 +372,11 @@ func outputText(cmd *cobra.Command, result *executor.Result) error {
 }
 
 // Execute runs the root command
-func Execute() error {
+func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		os.Exit(GetExitCode(err))
 	}
-	return nil
 }
 
 // analyzeConventionalCommits analyzes commits and returns recommended bump type
