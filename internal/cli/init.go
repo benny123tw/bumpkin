@@ -42,9 +42,12 @@ with sensible defaults and commented examples for hooks.`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		configFile := ".bumpkin.yaml"
 
-		// Check if config already exists
-		if _, err := os.Stat(configFile); err == nil {
-			return fmt.Errorf("%s already exists", configFile)
+		// Check if config already exists (both .yaml and .yml)
+		if _, err := os.Stat(".bumpkin.yaml"); err == nil {
+			return fmt.Errorf(".bumpkin.yaml already exists")
+		}
+		if _, err := os.Stat(".bumpkin.yml"); err == nil {
+			return fmt.Errorf(".bumpkin.yml already exists")
 		}
 
 		// Write config file

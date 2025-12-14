@@ -78,6 +78,38 @@ func TestInitCommand_ConfigExists(t *testing.T) {
 	assert.Contains(t, err.Error(), "already exists")
 }
 
+func TestInitCommand_YmlExists(t *testing.T) {
+	// Create a temp directory for testing
+	tmpDir, err := os.MkdirTemp("", "bumpkin-init-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	// Change to temp directory
+	originalDir, err := os.Getwd()
+	require.NoError(t, err)
+	defer func() {
+		_ = os.Chdir(originalDir)
+	}()
+
+	err = os.Chdir(tmpDir)
+	require.NoError(t, err)
+
+	// Create existing .bumpkin.yml file (legacy extension)
+	configPath := filepath.Join(tmpDir, ".bumpkin.yml")
+	//nolint:gosec // Test file, permissions don't matter
+	err = os.WriteFile(configPath, []byte("existing: true"), 0o644)
+	require.NoError(t, err)
+
+	// Run init command - should fail because .yml exists
+	buf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetArgs([]string{"init"})
+
+	err = rootCmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), ".bumpkin.yml already exists")
+}
+
 func TestInitCommand_Help(t *testing.T) {
 	buf := new(bytes.Buffer)
 	rootCmd.SetOut(buf)
