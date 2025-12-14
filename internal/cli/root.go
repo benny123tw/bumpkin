@@ -1,29 +1,55 @@
 package cli
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 
+	"github.com/benny123tw/bumpkin/internal/executor"
 	"github.com/benny123tw/bumpkin/internal/git"
 	"github.com/benny123tw/bumpkin/internal/tui"
-)
-
-var (
-	// Flags
-	prefix  string
-	remote  string
-	dryRun  bool
-	noPush  bool
-	version bool
+	"github.com/benny123tw/bumpkin/internal/version"
 )
 
 // Version information (set at build time)
 var (
-	Version   = "dev"
-	BuildDate = "unknown"
+	AppVersion = "dev"
+	BuildDate  = "unknown"
 )
+
+// Flag variables
+var (
+	// Bump type flags (mutually exclusive)
+	flagPatch      bool
+	flagMinor      bool
+	flagMajor      bool
+	flagSetVersion string
+
+	// Behavior flags
+	flagPrefix      string
+	flagRemote      string
+	flagDryRun      bool
+	flagNoPush      bool
+	flagYes         bool
+	flagJSON        bool
+	flagShowVersion bool
+)
+
+// JSONOutput represents the JSON output format for non-interactive mode
+type JSONOutput struct {
+	Success         bool   `json:"success"`
+	PreviousVersion string `json:"previous_version"`
+	NewVersion      string `json:"new_version"`
+	TagName         string `json:"tag_name"`
+	CommitHash      string `json:"commit_hash"`
+	TagCreated      bool   `json:"tag_created"`
+	Pushed          bool   `json:"pushed"`
+	DryRun          bool   `json:"dry_run"`
+	Error           string `json:"error,omitempty"`
+}
 
 var rootCmd = &cobra.Command{
 	Use:   "bumpkin",
@@ -34,37 +60,255 @@ conventional commit history and providing version options to select or customize
 Run without flags for interactive mode, or use flags for automation.`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		if version {
-			fmt.Printf("bumpkin %s (built %s)\n", Version, BuildDate)
-			return nil
-		}
+	RunE:          runRoot,
+}
 
-		// Open the repository from current directory
-		repo, err := git.OpenFromCurrent()
-		if err != nil {
-			return fmt.Errorf("failed to open repository: %w", err)
-		}
+// NewRootCmd creates a new root command instance (for testing)
+func NewRootCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "bumpkin",
+		Short: "Semantic version tagger for git repositories",
+		Long: `Bumpkin is a CLI tool that helps you tag commits by analyzing
+conventional commit history and providing version options to select or customize.
 
-		// Launch interactive TUI
-		cfg := tui.Config{
-			Repository: repo,
-			Prefix:     prefix,
-			Remote:     remote,
-			DryRun:     dryRun,
-			NoPush:     noPush,
-		}
+Run without flags for interactive mode, or use flags for automation.`,
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE:          runRoot,
+	}
 
-		return tui.Run(cfg)
-	},
+	addFlags(cmd)
+	return cmd
 }
 
 func init() {
-	rootCmd.Flags().StringVarP(&prefix, "prefix", "p", "v", "Tag prefix")
-	rootCmd.Flags().StringVarP(&remote, "remote", "r", "origin", "Git remote name")
-	rootCmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Preview without making changes")
-	rootCmd.Flags().BoolVar(&noPush, "no-push", false, "Create tag but don't push")
-	rootCmd.Flags().BoolVarP(&version, "version", "v", false, "Show version information")
+	addFlags(rootCmd)
+}
+
+func addFlags(cmd *cobra.Command) {
+	// Bump type flags
+	cmd.Flags().BoolVar(&flagPatch, "patch", false, "Bump patch version (x.y.Z)")
+	cmd.Flags().BoolVar(&flagMinor, "minor", false, "Bump minor version (x.Y.0)")
+	cmd.Flags().BoolVar(&flagMajor, "major", false, "Bump major version (X.0.0)")
+	cmd.Flags().StringVar(&flagSetVersion, "set-version", "", "Set specific version")
+
+	// Behavior flags
+	cmd.Flags().StringVarP(&flagPrefix, "prefix", "p", "v", "Tag prefix")
+	cmd.Flags().StringVarP(&flagRemote, "remote", "r", "origin", "Git remote name")
+	cmd.Flags().BoolVarP(&flagDryRun, "dry-run", "d", false, "Preview without making changes")
+	cmd.Flags().BoolVar(&flagNoPush, "no-push", false, "Create tag but don't push")
+	cmd.Flags().BoolVarP(&flagYes, "yes", "y", false, "Skip confirmation in non-interactive mode")
+	cmd.Flags().BoolVar(&flagJSON, "json", false, "Output result as JSON")
+	cmd.Flags().BoolVar(&flagShowVersion, "show-version", false, "Show version information")
+
+	// Keep -v as alias for show-version for backwards compatibility
+	cmd.Flags().BoolP("version", "v", false, "Show version information")
+	//nolint:errcheck // Best effort to mark hidden
+	cmd.Flags().MarkHidden("version")
+}
+
+func runRoot(cmd *cobra.Command, _ []string) error {
+	// Handle version flag
+	showVer, _ := cmd.Flags().GetBool("version")
+	if flagShowVersion || showVer {
+		fmt.Fprintf(cmd.OutOrStdout(), "bumpkin %s (built %s)\n", AppVersion, BuildDate)
+		return nil
+	}
+
+	// Determine if we're in non-interactive mode
+	isNonInteractive := flagPatch || flagMinor || flagMajor || flagSetVersion != ""
+
+	// Open the repository from current directory
+	repo, err := git.OpenFromCurrent()
+	if err != nil {
+		return handleError(cmd, err, "failed to open repository")
+	}
+
+	if isNonInteractive {
+		return runNonInteractive(cmd, repo)
+	}
+
+	return runInteractive(repo)
+}
+
+func runNonInteractive(cmd *cobra.Command, repo *git.Repository) error {
+	// Validate mutually exclusive flags
+	bumpCount := 0
+	if flagPatch {
+		bumpCount++
+	}
+	if flagMinor {
+		bumpCount++
+	}
+	if flagMajor {
+		bumpCount++
+	}
+	if flagSetVersion != "" {
+		bumpCount++
+	}
+
+	if bumpCount > 1 {
+		err := fmt.Errorf(
+			"only one of --patch, --minor, --major, or --set-version can be specified",
+		)
+		return handleError(cmd, err, "")
+	}
+
+	// Determine bump type
+	var bumpType version.BumpType
+	var customVersion string
+
+	switch {
+	case flagPatch:
+		bumpType = version.BumpPatch
+	case flagMinor:
+		bumpType = version.BumpMinor
+	case flagMajor:
+		bumpType = version.BumpMajor
+	case flagSetVersion != "":
+		bumpType = version.BumpCustom
+		customVersion = flagSetVersion
+	}
+
+	// If not --yes, require confirmation (unless dry-run)
+	if !flagYes && !flagDryRun {
+		// Get current version for display
+		latestTag, err := repo.LatestTag(flagPrefix)
+		if err != nil {
+			return handleError(cmd, err, "failed to get latest tag")
+		}
+
+		var prevVersion version.Version
+		if latestTag == nil || latestTag.Version == nil {
+			prevVersion = version.Zero()
+		} else {
+			prevVersion = *latestTag.Version
+		}
+
+		var newVersion version.Version
+		if bumpType == version.BumpCustom {
+			newVersion, err = version.Parse(customVersion)
+			if err != nil {
+				return handleError(cmd, err, "invalid version")
+			}
+		} else {
+			newVersion = version.Bump(prevVersion, bumpType)
+		}
+
+		fmt.Fprintf(
+			cmd.OutOrStdout(),
+			"Will bump version: %s → %s\n",
+			prevVersion.String(),
+			newVersion.String(),
+		)
+		fmt.Fprintf(
+			cmd.OutOrStdout(),
+			"Use --yes to skip this confirmation, or run in interactive mode.\n",
+		)
+		return fmt.Errorf("confirmation required: use --yes flag to proceed")
+	}
+
+	// Execute the bump
+	req := executor.Request{
+		Repository:    repo,
+		BumpType:      bumpType,
+		CustomVersion: customVersion,
+		Prefix:        flagPrefix,
+		Remote:        flagRemote,
+		DryRun:        flagDryRun,
+		NoPush:        flagNoPush,
+	}
+
+	result, err := executor.Execute(context.Background(), req)
+	if err != nil {
+		return handleError(cmd, err, "bump failed")
+	}
+
+	// Output result
+	if flagJSON {
+		return outputJSON(cmd, result, nil)
+	}
+
+	return outputText(cmd, result)
+}
+
+func runInteractive(repo *git.Repository) error {
+	cfg := tui.Config{
+		Repository: repo,
+		Prefix:     flagPrefix,
+		Remote:     flagRemote,
+		DryRun:     flagDryRun,
+		NoPush:     flagNoPush,
+	}
+
+	return tui.Run(cfg)
+}
+
+func handleError(cmd *cobra.Command, err error, context string) error {
+	if flagJSON {
+		//nolint:errcheck // Best effort output
+		outputJSON(cmd, nil, err)
+	}
+
+	if context != "" {
+		return fmt.Errorf("%s: %w", context, err)
+	}
+	return err
+}
+
+func outputJSON(cmd *cobra.Command, result *executor.Result, err error) error {
+	output := JSONOutput{
+		Success: err == nil,
+		DryRun:  flagDryRun,
+	}
+
+	if err != nil {
+		output.Error = err.Error()
+	}
+
+	if result != nil {
+		output.PreviousVersion = result.PreviousVersion
+		output.NewVersion = result.NewVersion
+		output.TagName = result.TagName
+		output.CommitHash = result.CommitHash
+		output.TagCreated = result.TagCreated
+		output.Pushed = result.Pushed
+	}
+
+	encoder := json.NewEncoder(cmd.OutOrStdout())
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(output)
+}
+
+func outputText(cmd *cobra.Command, result *executor.Result) error {
+	out := cmd.OutOrStdout()
+
+	if flagDryRun {
+		fmt.Fprintln(out, "[DRY RUN]")
+	}
+
+	fmt.Fprintf(out, "Version: %s → %s\n", result.PreviousVersion, result.NewVersion)
+	fmt.Fprintf(out, "Tag: %s\n", result.TagName)
+	fmt.Fprintf(out, "Commit: %s\n", result.CommitHash[:7])
+
+	if result.TagCreated {
+		fmt.Fprintln(out, "Tag created: yes")
+	} else {
+		fmt.Fprintln(out, "Tag created: no (dry run)")
+	}
+
+	switch {
+	case result.Pushed:
+		fmt.Fprintln(out, "Pushed: yes")
+	case flagNoPush:
+		fmt.Fprintln(out, "Pushed: no (--no-push)")
+	case flagDryRun:
+		fmt.Fprintln(out, "Pushed: no (dry run)")
+	default:
+		fmt.Fprintln(out, "Pushed: no")
+	}
+
+	return nil
 }
 
 // Execute runs the root command
