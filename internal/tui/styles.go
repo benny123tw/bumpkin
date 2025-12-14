@@ -95,6 +95,63 @@ var (
 				Italic(true)
 )
 
+// Commit type styles for colored badges
+var (
+	FeatStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("154")) // Lime/Green
+
+	FixStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("214")) // Yellow
+
+	DocsStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("75")) // Blue
+
+	ChoreStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("245")) // Gray
+
+	RefactorStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("81")) // Cyan
+
+	TestStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("213")) // Magenta
+
+	PerfStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("208")) // Orange
+
+	BreakingStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("255")).
+			Background(errorColor) // Red background
+)
+
+// CommitTypeStyles maps commit types to their lipgloss styles
+var CommitTypeStyles = map[string]lipgloss.Style{
+	"feat":     FeatStyle,
+	"fix":      FixStyle,
+	"docs":     DocsStyle,
+	"chore":    ChoreStyle,
+	"refactor": RefactorStyle,
+	"test":     TestStyle,
+	"style":    ChoreStyle,
+	"perf":     PerfStyle,
+	"ci":       ChoreStyle,
+	"build":    ChoreStyle,
+}
+
+// GetCommitTypeStyle returns the appropriate style for a commit type
+func GetCommitTypeStyle(commitType string, isBreaking bool) lipgloss.Style {
+	if isBreaking {
+		// Apply breaking style (red background) to the type
+		if baseStyle, ok := CommitTypeStyles[commitType]; ok {
+			return baseStyle.Background(errorColor)
+		}
+		return BreakingStyle
+	}
+	if style, ok := CommitTypeStyles[commitType]; ok {
+		return style
+	}
+	return lipgloss.NewStyle() // Default unstyled
+}
+
 // Icons
 const (
 	IconCheck    = "✓"

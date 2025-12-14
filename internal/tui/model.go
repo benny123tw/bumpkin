@@ -186,7 +186,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		m.state = StateCommitList
+		// Go directly to version selection (skip commit preview screen)
+		m.state = StateVersionSelect
 		return m, nil
 
 	case ExecuteResultMsg:
@@ -223,7 +224,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "esc":
 		switch m.state {
 		case StateVersionSelect:
-			m.state = StateCommitList
+			// No action - this is the first screen now
 		case StateCustomInput:
 			m.state = StateVersionSelect
 			m.customInput.Reset()
@@ -236,11 +237,9 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	switch m.state {
-	case StateLoading:
-		// No key handling during loading
+	case StateLoading, StateCommitList:
+		// No key handling during loading (StateCommitList kept for backwards compatibility)
 		return m, nil
-	case StateCommitList:
-		return m.handleCommitListKeys(msg)
 	case StateVersionSelect:
 		return m.handleVersionSelectKeys(msg)
 	case StateCustomInput:
@@ -254,13 +253,6 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	}
 
-	return m, nil
-}
-
-func (m Model) handleCommitListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if msg.String() == keyEnter || msg.String() == keySpace {
-		m.state = StateVersionSelect
-	}
 	return m, nil
 }
 
@@ -390,10 +382,8 @@ func (m Model) View() string {
 		sb.WriteString(m.spinner.View())
 		sb.WriteString(" Loading repository...")
 
-	case StateCommitList:
-		sb.WriteString(m.renderCommitListView())
-
-	case StateVersionSelect:
+	case StateCommitList, StateVersionSelect:
+		// StateCommitList is deprecated - both render the same view now
 		sb.WriteString(m.renderVersionSelectView())
 
 	case StateCustomInput:
@@ -420,28 +410,25 @@ func (m Model) View() string {
 	return sb.String()
 }
 
-func (m Model) renderCommitListView() string {
-	var sb strings.Builder
-
-	// Current version
-	sb.WriteString(fmt.Sprintf("Current version: %s\n\n",
-		CurrentVersionStyle.Render(m.currentVersion.StringWithPrefix(m.config.Prefix)),
-	))
-
-	// Commits
-	sb.WriteString(SubtitleStyle.Render("Commits since last tag:"))
-	sb.WriteString("\n")
-	sb.WriteString(RenderCommitList(m.commits, 10))
-
-	return sb.String()
-}
-
 func (m Model) renderVersionSelectView() string {
 	var sb strings.Builder
 
 	sb.WriteString(fmt.Sprintf("Current version: %s\n\n",
 		CurrentVersionStyle.Render(m.currentVersion.StringWithPrefix(m.config.Prefix)),
 	))
+
+	// Show commit history with badges (persistent display)
+	if len(m.commits) > 0 {
+		sb.WriteString(SubtitleStyle.Render(
+			fmt.Sprintf("%d Commits since the last version:", len(m.commits)),
+		))
+		sb.WriteString("\n\n")
+		sb.WriteString(RenderCommitListWithBadges(m.commits, maxCommitsToDisplay))
+		sb.WriteString("\n")
+	} else {
+		sb.WriteString(WarningStyle.Render("No commits since last tag"))
+		sb.WriteString("\n\n")
+	}
 
 	sb.WriteString(SubtitleStyle.Render("Select version bump:"))
 	sb.WriteString("\n")
@@ -503,9 +490,10 @@ func (m Model) renderHelp() string {
 	case StateLoading:
 		help = "loading..."
 	case StateCommitList:
+		// Deprecated - kept for backwards compatibility
 		help = "enter: select version • q: quit"
 	case StateVersionSelect:
-		help = "↑/↓: navigate • enter: select • esc: back • q: quit"
+		help = "↑/↓: navigate • enter: select • q: quit"
 	case StateCustomInput:
 		help = "enter: confirm • esc: back"
 	case StateConfirm:
