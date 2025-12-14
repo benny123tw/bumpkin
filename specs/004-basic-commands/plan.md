@@ -2,6 +2,7 @@
 
 **Branch**: `004-basic-commands` | **Date**: 2024-12-14 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/004-basic-commands/spec.md`
+**Methodology**: Test-Driven Development (TDD)
 
 ## Summary
 
@@ -11,13 +12,27 @@ Add subcommand-style access to common operations (`version`, `help`, `init`, `cu
 
 **Language/Version**: Go 1.24  
 **Primary Dependencies**: Cobra v1.10.2 (already in use for CLI)  
-**Storage**: YAML files (`.bumpkin.yml` configuration)  
+**Storage**: YAML files (`.bumpkin.yaml` configuration)  
 **Testing**: Go standard testing with testify v1.11.1  
 **Target Platform**: darwin, linux, windows (amd64, arm64)
 **Project Type**: Single CLI application  
 **Performance Goals**: Sub-second command execution (CLI tool)  
 **Constraints**: None specific - simple CLI commands  
 **Scale/Scope**: Single binary, 5 new subcommands
+
+## Development Methodology: TDD
+
+This feature follows **Test-Driven Development**:
+
+1. **Red**: Write a failing test that defines expected behavior
+2. **Green**: Write minimal code to make the test pass
+3. **Refactor**: Clean up the code while keeping tests green
+
+For each user story:
+- Write acceptance tests first (based on spec scenarios)
+- Implement minimal code to pass tests
+- Refactor for clarity and quality
+- Run golangci-lint before moving to next story
 
 ## Constitution Check
 
@@ -54,10 +69,13 @@ internal/
 ├── cli/
 │   ├── root.go          # Root command (existing)
 │   ├── version.go       # NEW: version subcommand
-│   ├── help.go          # NEW: help subcommand (if needed)
+│   ├── version_test.go  # NEW: version tests (TDD)
 │   ├── init.go          # NEW: init subcommand
+│   ├── init_test.go     # NEW: init tests (TDD)
 │   ├── current.go       # NEW: current subcommand
-│   └── completion.go    # NEW: completion subcommand
+│   ├── current_test.go  # NEW: current tests (TDD)
+│   ├── completion.go    # NEW: completion subcommand
+│   └── completion_test.go # NEW: completion tests (TDD)
 ├── config/
 │   └── config.go        # Config loading (existing)
 ├── git/                 # Git operations (existing)
@@ -65,7 +83,7 @@ internal/
 └── version/             # Version logic (existing)
 ```
 
-**Structure Decision**: Follows existing single-project structure. New subcommands will be added as separate files in `internal/cli/` and registered with the root command in their `init()` functions.
+**Structure Decision**: Follows existing single-project structure. New subcommands will be added as separate files in `internal/cli/` and registered with the root command in their `init()` functions. Each command file has a corresponding `_test.go` file.
 
 ## Complexity Tracking
 
