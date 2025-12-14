@@ -24,11 +24,11 @@
 
 **Purpose**: Project initialization and Go module setup
 
-- [ ] T001 Initialize Go module with `go mod init github.com/benny123tw/bumpkin`
-- [ ] T002 Create project directory structure per plan.md (cmd/, internal/ with subdirectories)
-- [ ] T003 [P] Add core dependencies to go.mod (bubbletea, bubbles, lipgloss, cobra, go-git, semver, conventionalcommits)
-- [ ] T004 [P] Create minimal main.go entry point in cmd/bumpkin/main.go
-- [ ] T005 [P] Verify golangci-lint runs successfully on empty project
+- [x] T001 Initialize Go module with `go mod init github.com/benny123tw/bumpkin`
+- [x] T002 Create project directory structure per plan.md (cmd/, internal/ with subdirectories)
+- [x] T003 [P] Add core dependencies to go.mod (bubbletea, bubbles, lipgloss, cobra, go-git, semver, conventionalcommits)
+- [x] T004 [P] Create minimal main.go entry point in cmd/bumpkin/main.go
+- [x] T005 [P] Verify golangci-lint runs successfully on empty project
 
 ---
 
@@ -40,23 +40,23 @@
 
 ### Version Entity (shared by all stories)
 
-- [ ] T006 [P] Write test for Version struct creation and string formatting in internal/version/semver_test.go
-- [ ] T007 [P] Write test for parsing version strings (with/without v prefix) in internal/version/semver_test.go
-- [ ] T008 Implement Version struct and Parse function in internal/version/semver.go (make T006, T007 pass)
-- [ ] T009 Write test for version comparison (LessThan, Equal) in internal/version/semver_test.go
-- [ ] T010 Implement version comparison methods in internal/version/semver.go (make T009 pass)
+- [x] T006 [P] Write test for Version struct creation and string formatting in internal/version/semver_test.go
+- [x] T007 [P] Write test for parsing version strings (with/without v prefix) in internal/version/semver_test.go
+- [x] T008 Implement Version struct and Parse function in internal/version/semver.go (make T006, T007 pass)
+- [x] T009 Write test for version comparison (LessThan, Equal) in internal/version/semver_test.go
+- [x] T010 Implement version comparison methods in internal/version/semver.go (make T009 pass)
 
 ### Bump Types Entity
 
-- [ ] T011 [P] Write test for BumpType enum and string representation in internal/version/bump_test.go
-- [ ] T012 Implement BumpType constants and String method in internal/version/bump.go (make T011 pass)
+- [x] T011 [P] Write test for BumpType enum and string representation in internal/version/bump_test.go
+- [x] T012 Implement BumpType constants and String method in internal/version/bump.go (make T011 pass)
 
 ### Git Repository Detection
 
-- [ ] T013 Write test for detecting git repository in internal/git/repository_test.go
-- [ ] T014 Implement Repository.Open function in internal/git/repository.go (make T013 pass)
-- [ ] T015 Write test for repository not found error in internal/git/repository_test.go
-- [ ] T016 Implement error handling for non-git directories in internal/git/repository.go (make T015 pass)
+- [x] T013 Write test for detecting git repository in internal/git/repository_test.go
+- [x] T014 Implement Repository.Open function in internal/git/repository.go (make T013 pass)
+- [x] T015 Write test for repository not found error in internal/git/repository_test.go
+- [x] T016 Implement error handling for non-git directories in internal/git/repository.go (make T015 pass)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -70,10 +70,10 @@
 
 ### Tests for US1 - Version Bumping Logic
 
-- [ ] T017 [P] [US1] Write test for BumpPatch (1.2.3 → 1.2.4) in internal/version/bump_test.go
-- [ ] T018 [P] [US1] Write test for BumpMinor (1.2.3 → 1.3.0) in internal/version/bump_test.go
-- [ ] T019 [P] [US1] Write test for BumpMajor (1.2.3 → 2.0.0) in internal/version/bump_test.go
-- [ ] T020 [US1] Implement BumpPatch, BumpMinor, BumpMajor in internal/version/bump.go (make T017-T019 pass)
+- [x] T017 [P] [US1] Write test for BumpPatch (1.2.3 → 1.2.4) in internal/version/bump_test.go
+- [x] T018 [P] [US1] Write test for BumpMinor (1.2.3 → 1.3.0) in internal/version/bump_test.go
+- [x] T019 [P] [US1] Write test for BumpMajor (1.2.3 → 2.0.0) in internal/version/bump_test.go
+- [x] T020 [US1] Implement BumpPatch, BumpMinor, BumpMajor in internal/version/bump.go (make T017-T019 pass)
 
 ### Tests for US1 - Git Tag Operations
 
