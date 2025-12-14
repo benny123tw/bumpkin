@@ -15,10 +15,11 @@ type Config struct {
 	Hooks  Hooks  `yaml:"hooks"`
 }
 
-// Hooks contains pre and post tag hooks
+// Hooks contains pre-tag, post-tag, and post-push hooks
 type Hooks struct {
-	PreTag  []string `yaml:"pre-tag"`
-	PostTag []string `yaml:"post-tag"`
+	PreTag   []string `yaml:"pre-tag"`
+	PostTag  []string `yaml:"post-tag"`
+	PostPush []string `yaml:"post-push"`
 }
 
 // Default returns a config with default values
@@ -95,6 +96,9 @@ func (c *Config) Merge(other *Config) *Config {
 	}
 	if len(other.Hooks.PostTag) > 0 {
 		result.Hooks.PostTag = other.Hooks.PostTag
+	}
+	if len(other.Hooks.PostPush) > 0 {
+		result.Hooks.PostPush = other.Hooks.PostPush
 	}
 
 	return result

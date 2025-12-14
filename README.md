@@ -114,10 +114,31 @@ hooks:
     - "npm version $BUMPKIN_VERSION --no-git-tag-version"
     - "./scripts/update-changelog.sh"
   
-  # Run after pushing tag
+  # Run after creating tag (aborts on failure)
   post-tag:
-    - "./scripts/notify-release.sh"
+    - "echo Tagged $BUMPKIN_TAG"
+  
+  # Run after pushing tag (fail-open: continues on failure, reports warnings)
+  post-push:
+    - "curl -X POST $SLACK_WEBHOOK -d '{\"text\": \"Released $BUMPKIN_TAG\"}'"
+    - "./scripts/notify-team.sh"
 ```
+
+### Hook Phases
+
+Hooks execute in this order:
+
+```
+pre-tag → create tag → post-tag → push → post-push
+```
+
+| Phase | Behavior on Failure |
+|-------|---------------------|
+| `pre-tag` | Aborts - tag not created |
+| `post-tag` | Aborts - tag already created |
+| `post-push` | Warning - tag already pushed (fail-open) |
+
+**Note:** `post-push` hooks use fail-open behavior: if a hook fails, subsequent hooks still execute and warnings are reported. This is ideal for notifications where you don't want one failing webhook to block others.
 
 ### Hook Environment Variables
 

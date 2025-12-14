@@ -181,3 +181,75 @@ func TestHookContext_ToEnv(t *testing.T) {
 	assert.Contains(t, env, "VERSION=1.2.3")
 	assert.Contains(t, env, "TAG=v1.2.3")
 }
+
+// T004: Test for PostPush HookType constant
+func TestPostPushHookType(t *testing.T) {
+	assert.Equal(t, HookType("post-push"), PostPush)
+	assert.NotEqual(t, PostPush, PreTag)
+	assert.NotEqual(t, PostPush, PostTag)
+}
+
+// T005: Test for RunHooksFailOpen function (continues on failure)
+func TestRunHooksFailOpen(t *testing.T) {
+	ctx := context.Background()
+	hookCtx := &HookContext{
+		Version: "1.0.0",
+		TagName: "v1.0.0",
+	}
+
+	hooks := []Hook{
+		{Command: "echo first", Type: PostPush},
+		{Command: "exit 1", Type: PostPush},     // This fails
+		{Command: "echo third", Type: PostPush}, // Should still run
+	}
+
+	results, warnings := RunHooksFailOpen(ctx, hooks, hookCtx)
+
+	// All hooks should have run
+	assert.Len(t, results, 3)
+	assert.True(t, results[0].Success)
+	assert.False(t, results[1].Success)
+	assert.True(t, results[2].Success)
+
+	// Should have one warning for the failed hook
+	assert.Len(t, warnings, 1)
+	assert.Contains(t, warnings[0], "exit 1")
+}
+
+func TestRunHooksFailOpen_AllSuccess(t *testing.T) {
+	ctx := context.Background()
+	hookCtx := &HookContext{
+		Version: "1.0.0",
+	}
+
+	hooks := []Hook{
+		{Command: "echo first", Type: PostPush},
+		{Command: "echo second", Type: PostPush},
+	}
+
+	results, warnings := RunHooksFailOpen(ctx, hooks, hookCtx)
+
+	assert.Len(t, results, 2)
+	assert.True(t, results[0].Success)
+	assert.True(t, results[1].Success)
+	assert.Empty(t, warnings)
+}
+
+func TestRunHooksFailOpen_AllFail(t *testing.T) {
+	ctx := context.Background()
+	hookCtx := &HookContext{
+		Version: "1.0.0",
+	}
+
+	hooks := []Hook{
+		{Command: "exit 1", Type: PostPush},
+		{Command: "exit 2", Type: PostPush},
+	}
+
+	results, warnings := RunHooksFailOpen(ctx, hooks, hookCtx)
+
+	assert.Len(t, results, 2)
+	assert.False(t, results[0].Success)
+	assert.False(t, results[1].Success)
+	assert.Len(t, warnings, 2)
+}

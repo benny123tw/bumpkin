@@ -85,6 +85,16 @@ func RenderSuccess(result *ExecutionSummary) string {
 		sb.WriteString(fmt.Sprintf("  Push:        %s\n", WarningStyle.Render("skipped")))
 	}
 
+	// Display post-push hook warnings if any
+	if len(result.PostPushWarnings) > 0 {
+		sb.WriteString("\n")
+		sb.WriteString(WarningStyle.Render("  Post-push hook warnings:"))
+		sb.WriteString("\n")
+		for _, warning := range result.PostPushWarnings {
+			sb.WriteString(fmt.Sprintf("    %s %s\n", IconCross, warning))
+		}
+	}
+
 	sb.WriteString("\n")
 	sb.WriteString(HelpStyle.Render("Press any key to exit"))
 
@@ -106,10 +116,11 @@ func RenderError(err error) string {
 
 // ExecutionSummary contains summary info for display
 type ExecutionSummary struct {
-	TagName    string
-	CommitHash string
-	Pushed     bool
-	Remote     string
+	TagName          string
+	CommitHash       string
+	Pushed           bool
+	Remote           string
+	PostPushWarnings []string
 }
 
 // BumpTypeLabel returns a human-readable label for a bump type

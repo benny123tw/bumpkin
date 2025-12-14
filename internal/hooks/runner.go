@@ -92,3 +92,29 @@ func CreateHooks(commands []string, hookType HookType) []Hook {
 	}
 	return hooks
 }
+
+// RunHooksFailOpen executes multiple hooks in sequence, continuing on failure.
+// Returns all results and a slice of warning messages for failed hooks.
+// This is used for post-push hooks where failures should not block the workflow.
+func RunHooksFailOpen(
+	ctx context.Context,
+	hooks []Hook,
+	hookCtx *HookContext,
+) ([]*HookResult, []string) {
+	var results []*HookResult
+	var warnings []string
+
+	for _, hook := range hooks {
+		result := RunHook(ctx, hook, hookCtx)
+		results = append(results, result)
+
+		if !result.Success {
+			warnings = append(
+				warnings,
+				fmt.Sprintf("hook '%s' failed: %v", hook.Command, result.Error),
+			)
+		}
+	}
+
+	return results, warnings
+}

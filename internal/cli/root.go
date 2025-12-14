@@ -287,6 +287,7 @@ func runNonInteractive(cmd *cobra.Command, repo *git.Repository, cfg *config.Con
 		NoHooks:       flagNoHooks,
 		PreTagHooks:   cfg.Hooks.PreTag,
 		PostTagHooks:  cfg.Hooks.PostTag,
+		PostPushHooks: cfg.Hooks.PostPush,
 	}
 
 	result, err := executor.Execute(context.Background(), req)
@@ -304,14 +305,15 @@ func runNonInteractive(cmd *cobra.Command, repo *git.Repository, cfg *config.Con
 
 func runInteractive(repo *git.Repository, cfg *config.Config) error {
 	tuiCfg := tui.Config{
-		Repository:   repo,
-		Prefix:       flagPrefix,
-		Remote:       flagRemote,
-		DryRun:       flagDryRun,
-		NoPush:       flagNoPush,
-		NoHooks:      flagNoHooks,
-		PreTagHooks:  cfg.Hooks.PreTag,
-		PostTagHooks: cfg.Hooks.PostTag,
+		Repository:    repo,
+		Prefix:        flagPrefix,
+		Remote:        flagRemote,
+		DryRun:        flagDryRun,
+		NoPush:        flagNoPush,
+		NoHooks:       flagNoHooks,
+		PreTagHooks:   cfg.Hooks.PreTag,
+		PostTagHooks:  cfg.Hooks.PostTag,
+		PostPushHooks: cfg.Hooks.PostPush,
 	}
 
 	return tui.Run(tuiCfg)
@@ -380,6 +382,15 @@ func outputText(cmd *cobra.Command, result *executor.Result) error {
 		fmt.Fprintln(out, "Pushed: no (dry run)")
 	default:
 		fmt.Fprintln(out, "Pushed: no")
+	}
+
+	// Display post-push hook warnings if any
+	if len(result.PostPushWarnings) > 0 {
+		fmt.Fprintln(out, "")
+		fmt.Fprintln(out, "Post-push hook warnings:")
+		for _, warning := range result.PostPushWarnings {
+			fmt.Fprintf(out, "  - %s\n", warning)
+		}
 	}
 
 	return nil
