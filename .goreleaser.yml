@@ -7,43 +7,79 @@ before:
 builds:
   - id: bumpkin
     main: ./cmd/bumpkin
-    binary: bumpkin
     env:
       - CGO_ENABLED=0
     goos:
-      - linux
       - darwin
+      - linux
       - windows
+      - freebsd
     goarch:
       - amd64
+      - arm
       - arm64
+    goarm:
+      - "6"
+      - "7"
+    ignore:
+      - goos: darwin
+        goarch: arm
+      - goos: windows
+        goarch: arm
+      - goos: windows
+        goarch: arm64
+      - goos: freebsd
+        goarch: arm
+      - goos: freebsd
+        goarch: arm64
+    flags:
+      - -trimpath
     ldflags:
       - -s -w
       - -X github.com/benny123tw/bumpkin/internal/cli.AppVersion={{.Version}}
       - -X github.com/benny123tw/bumpkin/internal/cli.BuildDate={{.Date}}
+      - -X github.com/benny123tw/bumpkin/internal/cli.GitCommit={{.FullCommit}}
+    binary: >-
+      {{ .ProjectName }}-
+      {{- .Version }}-
+      {{- .Os }}-
+      {{- if eq .Arch "amd64" }}amd64
+      {{- else if eq .Arch "386" }}386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}-{{ .Arm }}{{ end }}
+    no_unique_dist_dir: true
 
 archives:
-  - id: bumpkin
-    formats:
-      - tar.gz
-    format_overrides:
-      - goos: windows
-        formats:
-          - zip
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+  - formats: ["binary"]
+    name_template: "{{ .Binary }}"
+    allow_different_binary_count: true
 
 checksum:
   name_template: "checksums.txt"
 
 changelog:
-  sort: asc
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
-      - "^chore:"
-      - Merge pull request
-      - Merge branch
+  use: github
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: "Bug fixes"
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: "Enhancements"
+      regexp: "^.*chore[(\\w)]*:+.*$"
+      order: 2
+    - title: "Refactor"
+      regexp: "^.*refactor[(\\w)]*:+.*$"
+      order: 3
+    - title: "Build process updates"
+      regexp: ^.*?(build|ci)(\(.+\))??!?:.+$
+      order: 4
+    - title: "Documentation updates"
+      regexp: ^.*?docs?(\(.+\))??!?:.+$
+      order: 5
+    - title: Others
+      order: 999
 
 release:
   github:

@@ -20,6 +20,7 @@ import (
 var (
 	AppVersion = "dev"
 	BuildDate  = "unknown"
+	GitCommit  = "unknown"
 )
 
 // Flag variables
@@ -135,7 +136,11 @@ func runRoot(cmd *cobra.Command, _ []string) error {
 	// Handle version flag
 	showVer, _ := cmd.Flags().GetBool("version")
 	if flagShowVersion || showVer {
-		fmt.Fprintf(cmd.OutOrStdout(), "bumpkin %s (built %s)\n", AppVersion, BuildDate)
+		commit := GitCommit
+		if len(commit) > 7 {
+			commit = commit[:7]
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "bumpkin %s (%s, built %s)\n", AppVersion, commit, BuildDate)
 		return nil
 	}
 
