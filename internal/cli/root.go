@@ -23,6 +23,15 @@ var (
 	GitCommit  = "unknown"
 )
 
+// PrintVersionInfo prints version information to the given command's output
+func PrintVersionInfo(cmd *cobra.Command) {
+	commit := GitCommit
+	if len(commit) > 7 {
+		commit = commit[:7]
+	}
+	fmt.Fprintf(cmd.OutOrStdout(), "bumpkin %s (%s, built %s)\n", AppVersion, commit, BuildDate)
+}
+
 // Flag variables
 var (
 	// Bump type flags (mutually exclusive)
@@ -136,11 +145,7 @@ func runRoot(cmd *cobra.Command, _ []string) error {
 	// Handle version flag
 	showVer, _ := cmd.Flags().GetBool("version")
 	if flagShowVersion || showVer {
-		commit := GitCommit
-		if len(commit) > 7 {
-			commit = commit[:7]
-		}
-		fmt.Fprintf(cmd.OutOrStdout(), "bumpkin %s (%s, built %s)\n", AppVersion, commit, BuildDate)
+		PrintVersionInfo(cmd)
 		return nil
 	}
 
