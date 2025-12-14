@@ -1,18 +1,15 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: N/A → 1.0.0 (initial ratification)
-Modified principles: N/A (initial)
+Version change: 1.0.0 → 1.1.0
+Modified principles: None
 Added sections:
-  - Principle I: Code Quality (golangci-lint)
-  - Section: Code Quality Configuration
-  - Section: Development Workflow
-  - Section: Governance
-Removed sections: N/A (initial)
+  - Principle II: Test-Driven Development (TDD)
+Removed sections: None
 Templates requiring updates:
   - .specify/templates/plan-template.md: ✅ No updates required (Constitution Check generic)
-  - .specify/templates/spec-template.md: ✅ No updates required
-  - .specify/templates/tasks-template.md: ✅ No updates required
+  - .specify/templates/spec-template.md: ✅ No updates required (already supports test scenarios)
+  - .specify/templates/tasks-template.md: ✅ Already aligned (tests-first pattern documented)
 Follow-up TODOs: None
 -->
 
@@ -32,6 +29,27 @@ All Go code MUST pass golangci-lint checks before merge.
 
 **Rationale**: Consistent code quality and formatting reduces cognitive load during review,
 catches bugs early, and ensures the codebase remains maintainable over time.
+
+### II. Test-Driven Development (TDD)
+
+All feature implementation MUST follow the TDD cycle: Red → Green → Refactor.
+
+**Requirements**:
+- Tests MUST be written BEFORE implementation code
+- Tests MUST fail initially (Red phase) to confirm they detect the missing functionality
+- Implementation code MUST be written only to make failing tests pass (Green phase)
+- Code MUST be refactored after tests pass while maintaining all tests green (Refactor phase)
+- No production code changes are permitted without a corresponding failing test first
+
+**Workflow**:
+1. **Red**: Write a test that defines expected behavior. Run it. It MUST fail.
+2. **Green**: Write the minimum code necessary to make the test pass. No more.
+3. **Refactor**: Improve code structure, remove duplication, enhance readability—all tests MUST remain green.
+
+**Rationale**: TDD ensures comprehensive test coverage by design, produces modular and decoupled code,
+provides immediate feedback during development, and creates living documentation of expected behavior.
+The discipline of writing tests first prevents over-engineering and keeps implementation focused on
+actual requirements.
 
 ## Code Quality Configuration
 
@@ -58,13 +76,16 @@ The project uses golangci-lint version 2 configuration stored at `.golangci.yml`
 ## Development Workflow
 
 **Before committing**:
-1. Run `golangci-lint run` to check for linting errors
-2. Run `golangci-lint fmt` to apply formatting (or use editor integration)
-3. Address all reported issues or add justified `//nolint` directives
+1. Ensure all new code follows TDD cycle (test written first, failed, then implementation)
+2. Run `go test ./...` to verify all tests pass
+3. Run `golangci-lint run` to check for linting errors
+4. Run `golangci-lint fmt` to apply formatting (or use editor integration)
+5. Address all reported issues or add justified `//nolint` directives
 
 **CI/CD Integration**:
+- All tests MUST pass before merge
 - Linting MUST be part of the CI pipeline
-- PRs MUST pass lint checks before merge
+- PRs MUST pass both test and lint checks before merge
 
 ## Governance
 
@@ -82,5 +103,6 @@ This constitution establishes the foundational principles for the Bumpkin projec
 **Compliance**:
 - All PRs and code reviews MUST verify compliance with these principles
 - Violations MUST be addressed before merge unless explicitly waived with documented justification
+- TDD compliance MUST be evidenced by commit history showing test commits before implementation commits
 
-**Version**: 1.0.0 | **Ratified**: 2025-12-13 | **Last Amended**: 2025-12-13
+**Version**: 1.1.0 | **Ratified**: 2025-12-13 | **Last Amended**: 2025-12-15
