@@ -2,10 +2,8 @@ package cli
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 
-	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,6 +24,7 @@ func TestVersionCommand(t *testing.T) {
 
 func TestVersionCommand_MatchesFlag(t *testing.T) {
 	// Test that `bumpkin version` produces same output as `bumpkin --show-version`
+	// Both use the shared PrintVersionInfo function, so outputs should be identical
 
 	// Run version subcommand
 	bufVersion := new(bytes.Buffer)
@@ -35,20 +34,8 @@ func TestVersionCommand_MatchesFlag(t *testing.T) {
 	require.NoError(t, err)
 	versionOutput := bufVersion.String()
 
-	// Run --show-version flag using a fresh command instance
+	// Run --show-version flag using a fresh command to avoid flag state issues
 	cmdFlag := NewRootCmd()
-	// Add the version subcommand to the new instance for consistency
-	cmdFlag.AddCommand(&cobra.Command{
-		Use:   "version",
-		Short: "Print version information",
-		Run: func(cmd *cobra.Command, _ []string) {
-			commit := GitCommit
-			if len(commit) > 7 {
-				commit = commit[:7]
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "bumpkin %s (%s, built %s)\n", AppVersion, commit, BuildDate)
-		},
-	})
 	bufFlag := new(bytes.Buffer)
 	cmdFlag.SetOut(bufFlag)
 	cmdFlag.SetArgs([]string{"--show-version"})
@@ -56,7 +43,7 @@ func TestVersionCommand_MatchesFlag(t *testing.T) {
 	require.NoError(t, err)
 	flagOutput := bufFlag.String()
 
-	// Both should produce identical output
+	// Both should produce identical output (they use the same PrintVersionInfo function)
 	assert.Equal(t, versionOutput, flagOutput)
 }
 

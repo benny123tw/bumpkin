@@ -34,13 +34,13 @@ hooks:
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Create a .bumpkin.yaml configuration file",
-	Long: `Create a .bumpkin.yaml configuration file with default settings.
+	Short: "Create a .bumpkin.yml configuration file",
+	Long: `Create a .bumpkin.yml configuration file with default settings.
 
 This command creates a starter configuration file in the current directory
 with sensible defaults and commented examples for hooks.`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
-		configFile := ".bumpkin.yaml"
+		configFile := ".bumpkin.yml"
 
 		// Check if config already exists
 		if _, err := os.Stat(configFile); err == nil {

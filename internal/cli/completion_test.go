@@ -24,77 +24,38 @@ func TestCompletionCommand_Help(t *testing.T) {
 	assert.Contains(t, output, "powershell")
 }
 
-func TestCompletionCommand_BashHelp(t *testing.T) {
-	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"completion", "bash", "--help"})
+func TestCompletionCommand_Shells(t *testing.T) {
+	testCases := []struct {
+		shell        string
+		helpContains []string
+	}{
+		{"bash", []string{"bash", "autocompletion"}},
+		{"zsh", []string{"zsh"}},
+		{"fish", []string{"fish"}},
+		{"powershell", []string{"powershell"}},
+	}
 
-	err := rootCmd.Execute()
-	require.NoError(t, err)
+	for _, tc := range testCases {
+		t.Run(tc.shell+" help", func(t *testing.T) {
+			buf := new(bytes.Buffer)
+			rootCmd.SetOut(buf)
+			rootCmd.SetArgs([]string{"completion", tc.shell, "--help"})
 
-	output := buf.String()
-	assert.Contains(t, output, "bash")
-	assert.Contains(t, output, "autocompletion")
-}
+			err := rootCmd.Execute()
+			require.NoError(t, err)
 
-func TestCompletionCommand_ZshHelp(t *testing.T) {
-	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"completion", "zsh", "--help"})
+			output := buf.String()
+			for _, s := range tc.helpContains {
+				assert.Contains(t, output, s)
+			}
+		})
 
-	err := rootCmd.Execute()
-	require.NoError(t, err)
-
-	output := buf.String()
-	assert.Contains(t, output, "zsh")
-}
-
-func TestCompletionCommand_FishHelp(t *testing.T) {
-	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"completion", "fish", "--help"})
-
-	err := rootCmd.Execute()
-	require.NoError(t, err)
-
-	output := buf.String()
-	assert.Contains(t, output, "fish")
-}
-
-func TestCompletionCommand_PowershellHelp(t *testing.T) {
-	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"completion", "powershell", "--help"})
-
-	err := rootCmd.Execute()
-	require.NoError(t, err)
-
-	output := buf.String()
-	assert.Contains(t, output, "powershell")
-}
-
-// Note: Actual completion output goes to os.Stdout directly (Cobra built-in behavior)
-// The commands are tested via help flags and execution without error
-func TestCompletionCommand_BashExecutes(t *testing.T) {
-	rootCmd.SetArgs([]string{"completion", "bash"})
-	err := rootCmd.Execute()
-	require.NoError(t, err)
-}
-
-func TestCompletionCommand_ZshExecutes(t *testing.T) {
-	rootCmd.SetArgs([]string{"completion", "zsh"})
-	err := rootCmd.Execute()
-	require.NoError(t, err)
-}
-
-func TestCompletionCommand_FishExecutes(t *testing.T) {
-	rootCmd.SetArgs([]string{"completion", "fish"})
-	err := rootCmd.Execute()
-	require.NoError(t, err)
-}
-
-func TestCompletionCommand_PowershellExecutes(t *testing.T) {
-	rootCmd.SetArgs([]string{"completion", "powershell"})
-	err := rootCmd.Execute()
-	require.NoError(t, err)
+		t.Run(tc.shell+" executes", func(t *testing.T) {
+			// Note: Actual completion output goes to os.Stdout directly (Cobra built-in behavior)
+			// The commands are tested via execution without error
+			rootCmd.SetArgs([]string{"completion", tc.shell})
+			err := rootCmd.Execute()
+			require.NoError(t, err)
+		})
+	}
 }

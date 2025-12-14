@@ -32,7 +32,11 @@ func runCurrent(cmd *cobra.Command, _ []string) error {
 	}
 
 	tag, err := repo.LatestTag(prefix)
-	if err != nil || tag == nil {
+	if err != nil {
+		return fmt.Errorf("failed to get latest tag: %w", err)
+	}
+
+	if tag == nil {
 		fmt.Fprintln(cmd.OutOrStdout(), "No version tags found")
 		return nil
 	}
