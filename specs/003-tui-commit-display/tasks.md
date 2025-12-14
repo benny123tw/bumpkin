@@ -15,7 +15,7 @@
 
 | Story | Title | Priority |
 |-------|-------|----------|
-| US1 | Persistent Commit History Display | P1 |
+| US1 | Direct Version Selection with Commit History | P1 |
 | US2 | Colored Commit Type Badges | P1 |
 | US3 | Breaking Change Highlighting | P1 |
 | US4 | Commit Display Format | P2 |
@@ -45,11 +45,11 @@
 
 ---
 
-## Phase 3: User Story 1 - Persistent Commit History Display (Priority: P1)
+## Phase 3: User Story 1 - Direct Version Selection with Commit History (Priority: P1)
 
-**Goal**: Show commits on version selection screen so users have context when choosing a version bump
+**Goal**: Skip commit preview screen, go directly to version selection with commits displayed
 
-**Independent Test**: Run bumpkin, navigate to version selection, verify commits remain visible above version options
+**Independent Test**: Run bumpkin, verify it goes directly to version selection with commits (no intermediate screen)
 
 ### Implementation
 
@@ -58,9 +58,11 @@
 - [X] T010 [US1] Add commit count header (e.g., "5 Commits since the last version:")
 - [X] T011 [US1] Add truncation with "...and X more commit(s)" indicator when > 10 commits
 - [X] T012 [US1] Handle edge case: show "No commits since last tag" when empty
-- [ ] T013 [US1] Manual test: verify commits visible on version selection screen
+- [X] T013a [US1] Skip `StateCommitList` - go directly from loading to `StateVersionSelect`
+- [X] T013b [US1] Remove or deprecate `renderCommitListView` function (no longer used)
+- [ ] T013c [US1] Manual test: verify bumpkin goes directly to version selection with commits
 
-**Checkpoint**: ✅ User Story 1 complete - commits persist on version selection
+**Checkpoint**: ✅ User Story 1 complete - streamlined flow to version selection
 
 ---
 

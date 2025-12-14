@@ -7,23 +7,25 @@
 
 ## Overview
 
-Enhance the TUI to persistently display commit history during the version selection process, and add visual highlighting for commit types (feat, fix, docs, etc.) with special emphasis on breaking changes (commits with `!`).
+Enhance the TUI to display commit history directly on the version selection screen (skipping the separate commit preview step), and add visual highlighting for commit types (feat, fix, docs, etc.) with special emphasis on breaking changes (commits with `!`).
+
+**Key UX Change**: Remove the separate "commit list preview" screen. Users now go directly to version selection where commits are displayed with colored badges above the version options. This streamlines the flow from 2 screens to 1.
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - Persistent Commit History Display (Priority: P1)
+### User Story 1 - Direct Version Selection with Commit History (Priority: P1)
 
-As a developer, I want to see the commit history while selecting a version so that I can make an informed decision about which version bump to choose without having to remember what commits were made.
+As a developer, I want to immediately see the version selection screen with commit history so that I can make an informed decision quickly without extra navigation steps.
 
-**Why this priority**: This is the core value - users need context about their commits when deciding on a version bump. Currently, commits disappear when entering version selection.
+**Why this priority**: This is the core value - users need context about their commits when deciding on a version bump. Removing the separate preview screen reduces friction and speeds up the workflow.
 
-**Independent Test**: Run bumpkin, navigate to version selection, verify commits remain visible above the version options.
+**Independent Test**: Run bumpkin, verify it goes directly to version selection with commits displayed above version options (no intermediate screen).
 
 **Acceptance Scenarios**:
 
-1. **Given** user runs bumpkin in interactive mode, **When** they navigate from commit list to version selection, **Then** the commit history remains visible above the version options.
+1. **Given** user runs bumpkin in interactive mode, **When** the TUI loads, **Then** they see the version selection screen directly with commit history above (no separate commit preview step).
 
-2. **Given** user is on version selection screen, **When** they view the display, **Then** they see both commit history and version options in a single view.
+2. **Given** user is on version selection screen, **When** they view the display, **Then** they see both commit history (with colored badges) and version options in a single view.
 
 3. **Given** there are more commits than can fit on screen, **When** user views commit history, **Then** commits are truncated with a count indicator (e.g., "and 5 more commits...").
 
@@ -107,7 +109,7 @@ As a developer, I want commits displayed in a clean, consistent format showing h
 
 ### Functional Requirements
 
-- **FR-001**: System MUST display commit history on the version selection screen.
+- **FR-001**: System MUST skip the separate commit preview screen and go directly to version selection with commit history displayed.
 - **FR-002**: System MUST parse conventional commit types from commit messages.
 - **FR-003**: System MUST display commit type as a colored badge before the commit description.
 - **FR-004**: System MUST highlight breaking changes (commits with `!` after type) with a distinct red/warning color.
@@ -141,7 +143,7 @@ As a developer, I want commits displayed in a clean, consistent format showing h
 
 ### Measurable Outcomes
 
-- **SC-001**: Commit history is visible on version selection screen without requiring user to scroll back.
+- **SC-001**: Users see version selection with commit history immediately upon launching bumpkin (no extra keypress to "continue").
 - **SC-002**: Breaking change commits are immediately identifiable by red highlighting.
 - **SC-003**: Users can identify commit types in under 1 second per commit via color coding.
 - **SC-004**: TUI remains responsive with up to 100 commits in history.
