@@ -1,4 +1,4 @@
-# Bumpkin
+# 🎃 Bumpkin
 
 A semantic version tagger CLI for git repositories. Inspired by [antfu/bumpp](https://github.com/antfu/bumpp).
 

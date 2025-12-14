@@ -376,7 +376,7 @@ func (m Model) View() string {
 	var sb strings.Builder
 
 	// Header
-	sb.WriteString(TitleStyle.Render("🎯 bumpkin"))
+	sb.WriteString(TitleStyle.Render("🎃 bumpkin"))
 	sb.WriteString("\n")
 
 	if m.config.DryRun {
