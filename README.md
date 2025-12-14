@@ -135,7 +135,7 @@ pre-tag → create tag → post-tag → push → post-push
 | Phase | Behavior on Failure |
 |-------|---------------------|
 | `pre-tag` | Aborts - tag not created |
-| `post-tag` | Warning - tag already created |
+| `post-tag` | Aborts - tag already created |
 | `post-push` | Warning - tag already pushed (fail-open) |
 
 **Note:** `post-push` hooks use fail-open behavior: if a hook fails, subsequent hooks still execute and warnings are reported. This is ideal for notifications where you don't want one failing webhook to block others.
