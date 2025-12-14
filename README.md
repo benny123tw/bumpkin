@@ -209,3 +209,5 @@ just run
 ## License
 
 MIT
+
+<!-- Test change for Claude workflow debugging -->
