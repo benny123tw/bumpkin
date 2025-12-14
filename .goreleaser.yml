@@ -13,24 +13,11 @@ builds:
       - darwin
       - linux
       - windows
-      - freebsd
     goarch:
       - amd64
-      - arm
       - arm64
-    goarm:
-      - "6"
-      - "7"
     ignore:
-      - goos: darwin
-        goarch: arm
       - goos: windows
-        goarch: arm
-      - goos: windows
-        goarch: arm64
-      - goos: freebsd
-        goarch: arm
-      - goos: freebsd
         goarch: arm64
     flags:
       - -trimpath
@@ -46,9 +33,7 @@ builds:
       {{- .Os }}-
       {{- if eq .Arch "amd64" }}amd64
       {{- else if eq .Arch "amd64_v1" }}amd64
-      {{- else if eq .Arch "386" }}386
       {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}-{{ .Arm }}{{ end }}
     no_unique_dist_dir: true
 
 archives:
