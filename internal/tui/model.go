@@ -443,6 +443,19 @@ func (m Model) renderVersionSelectView() string {
 		CurrentVersionStyle.Render(m.currentVersion.StringWithPrefix(m.config.Prefix)),
 	))
 
+	// Show commit history with badges (persistent display)
+	if len(m.commits) > 0 {
+		sb.WriteString(SubtitleStyle.Render(
+			fmt.Sprintf("%d Commits since the last version:", len(m.commits)),
+		))
+		sb.WriteString("\n\n")
+		sb.WriteString(RenderCommitListWithBadges(m.commits, 10))
+		sb.WriteString("\n")
+	} else {
+		sb.WriteString(WarningStyle.Render("No commits since last tag"))
+		sb.WriteString("\n\n")
+	}
+
 	sb.WriteString(SubtitleStyle.Render("Select version bump:"))
 	sb.WriteString("\n")
 	sb.WriteString(RenderVersionSelector(m.versionOptions, m.selectedOption))

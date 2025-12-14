@@ -24,6 +24,7 @@ tests/
 Go 1.21+: Follow standard conventions
 
 ## Recent Changes
+- 003-tui-commit-display: Added Go 1.24+
 - 002-release-integration: Added Go 1.24+
 
 - 001-version-tagger: Added Go 1.21+
