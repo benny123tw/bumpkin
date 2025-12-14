@@ -1,0 +1,53 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: bumpkin
+    main: ./cmd/bumpkin
+    binary: bumpkin
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/benny123tw/bumpkin/internal/cli.AppVersion={{.Version}}
+      - -X github.com/benny123tw/bumpkin/internal/cli.BuildDate={{.Date}}
+
+archives:
+  - id: bumpkin
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - Merge pull request
+      - Merge branch
+
+release:
+  github:
+    owner: benny123tw
+    name: bumpkin
+  draft: false
+  prerelease: auto
