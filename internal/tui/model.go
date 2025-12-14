@@ -501,7 +501,8 @@ func (m Model) renderHelp() string {
 	case StateExecuting:
 		help = "please wait..."
 	case StateDone, StateError:
-		help = "press any key to exit"
+		// Help text already included in RenderSuccess/RenderError
+		return ""
 	}
 
 	return HelpStyle.Render(help)
