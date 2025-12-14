@@ -120,7 +120,7 @@ var (
 
 	BreakingStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("255")).
-			Background(lipgloss.Color("196")) // Red background
+			Background(errorColor) // Red background
 )
 
 // CommitTypeStyles maps commit types to their lipgloss styles
@@ -142,7 +142,7 @@ func GetCommitTypeStyle(commitType string, isBreaking bool) lipgloss.Style {
 	if isBreaking {
 		// Apply breaking style (red background) to the type
 		if baseStyle, ok := CommitTypeStyles[commitType]; ok {
-			return baseStyle.Background(lipgloss.Color("196"))
+			return baseStyle.Background(errorColor)
 		}
 		return BreakingStyle
 	}

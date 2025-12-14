@@ -8,6 +8,13 @@ import (
 	"github.com/benny123tw/bumpkin/internal/git"
 )
 
+// Commit display constants
+const (
+	conventionalCommitDescTruncate = 50 // Max length for conventional commit descriptions
+	nonConventionalCommitTruncate  = 60 // Max length for non-conventional commit messages
+	maxCommitsToDisplay            = 10 // Max commits to show before truncating
+)
+
 // CommitDisplay represents a formatted commit for TUI display
 type CommitDisplay struct {
 	Hash        string // Short hash (7 chars)
@@ -69,10 +76,10 @@ func RenderCommitListWithBadges(commits []*git.Commit, maxDisplay int) string {
 			style := GetCommitTypeStyle(display.Type, display.IsBreaking)
 			sb.WriteString(style.Render(display.Type))
 			sb.WriteString(" : ")
-			sb.WriteString(truncateString(display.Description, 50))
+			sb.WriteString(truncateString(display.Description, conventionalCommitDescTruncate))
 		} else {
 			// Non-conventional commit
-			sb.WriteString(truncateString(display.RawMessage, 60))
+			sb.WriteString(truncateString(display.RawMessage, nonConventionalCommitTruncate))
 		}
 
 		sb.WriteString("\n")

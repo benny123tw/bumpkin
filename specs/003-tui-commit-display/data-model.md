@@ -41,10 +41,10 @@ var CommitTypeStyles = map[string]lipgloss.Style{
     "chore":    ChoreStyle,
     "refactor": RefactorStyle,
     "test":     TestStyle,
-    "style":    StyleTypeStyle,
+    "style":    ChoreStyle,  // Maps to ChoreStyle (gray)
     "perf":     PerfStyle,
-    "ci":       CIStyle,
-    "build":    BuildStyle,
+    "ci":       ChoreStyle,  // Maps to ChoreStyle (gray)
+    "build":    ChoreStyle,  // Maps to ChoreStyle (gray)
 }
 
 // Individual styles
@@ -55,15 +55,12 @@ var (
     ChoreStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("245")) // Gray
     RefactorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("81"))  // Cyan
     TestStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("213")) // Magenta
-    StyleTypeStyle= lipgloss.NewStyle().Foreground(lipgloss.Color("245")) // Gray
-    PerfStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("214")) // Orange
-    CIStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("245")) // Gray
-    BuildStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("245")) // Gray
+    PerfStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("208")) // Orange
     
-    // Breaking change style (red background)
+    // Breaking change style (red background, uses errorColor)
     BreakingStyle = lipgloss.NewStyle().
         Foreground(lipgloss.Color("255")).
-        Background(lipgloss.Color("196"))
+        Background(errorColor)
 )
 ```
 

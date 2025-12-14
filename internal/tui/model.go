@@ -423,7 +423,7 @@ func (m Model) renderVersionSelectView() string {
 			fmt.Sprintf("%d Commits since the last version:", len(m.commits)),
 		))
 		sb.WriteString("\n\n")
-		sb.WriteString(RenderCommitListWithBadges(m.commits, 10))
+		sb.WriteString(RenderCommitListWithBadges(m.commits, maxCommitsToDisplay))
 		sb.WriteString("\n")
 	} else {
 		sb.WriteString(WarningStyle.Render("No commits since last tag"))

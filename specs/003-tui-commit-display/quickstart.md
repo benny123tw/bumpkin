@@ -99,13 +99,18 @@ type CommitDisplay struct {
     RawMessage  string
 }
 
-// conventionalCommitRegex matches: type(!)?:description
-var conventionalCommitRegex = regexp.MustCompile(`^(\w+)(!)?:\s*(.*)$`)
+// conventionalCommitRegex matches: type(!)?(\(scope\))?:description
+var conventionalCommitRegex = regexp.MustCompile(`^(\w+)(!)?(?:\([^)]*\))?:\s*(.*)$`)
 
 // ParseCommitForDisplay parses a git commit into display format
 func ParseCommitForDisplay(hash, message string) CommitDisplay {
+    shortHash := hash
+    if len(hash) > 7 {
+        shortHash = hash[:7]
+    }
+
     display := CommitDisplay{
-        Hash:       hash[:min(7, len(hash))],
+        Hash:       shortHash,
         RawMessage: message,
     }
     
@@ -132,11 +137,14 @@ func ParseCommitForDisplay(hash, message string) CommitDisplay {
 func RenderCommitListWithBadges(commits []*git.Commit, maxDisplay int) string {
     var sb strings.Builder
     
-    displayCount := min(len(commits), maxDisplay)
+    displayCount := len(commits)
+    if displayCount > maxDisplay {
+        displayCount = maxDisplay
+    }
     
     for i := 0; i < displayCount; i++ {
         commit := commits[i]
-        display := ParseCommitForDisplay(commit.Hash.String(), commit.Message)
+        display := ParseCommitForDisplay(commit.Hash, commit.Subject)
         
         // Hash
         sb.WriteString(CommitHashStyle.Render(display.Hash))
