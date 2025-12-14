@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/benny123tw/bumpkin/internal/git"
+	"github.com/benny123tw/bumpkin/internal/hooks"
 	"github.com/benny123tw/bumpkin/internal/version"
 )
 
@@ -18,6 +19,8 @@ type Request struct {
 	DryRun        bool   // If true, don't actually create/push tags
 	NoPush        bool   // If true, create tag but don't push
 	NoHooks       bool   // If true, skip hook execution
+	PreTagHooks   []string
+	PostTagHooks  []string
 }
 
 // Result contains the outcome of a version bump operation
@@ -28,6 +31,7 @@ type Result struct {
 	CommitHash      string
 	TagCreated      bool
 	Pushed          bool
+	HooksExecuted   int
 }
 
 // Execute performs a version bump operation
@@ -89,11 +93,33 @@ func Execute(ctx context.Context, req Request) (*Result, error) {
 		CommitHash:      headHash.String(),
 		TagCreated:      false,
 		Pushed:          false,
+		HooksExecuted:   0,
+	}
+
+	// Prepare hook context
+	hookCtx := &hooks.HookContext{
+		Version:         newVersion.String(),
+		PreviousVersion: prevVersion.String(),
+		TagName:         tagName,
+		Prefix:          req.Prefix,
+		Remote:          req.Remote,
+		CommitHash:      headHash.String(),
+		DryRun:          req.DryRun,
 	}
 
 	// Dry run - don't actually do anything
 	if req.DryRun {
 		return result, nil
+	}
+
+	// Run pre-tag hooks
+	if !req.NoHooks && len(req.PreTagHooks) > 0 {
+		preHooks := hooks.CreateHooks(req.PreTagHooks, hooks.PreTag)
+		results, err := hooks.RunHooks(ctx, preHooks, hookCtx)
+		if err != nil {
+			return result, fmt.Errorf("pre-tag hook failed: %w", err)
+		}
+		result.HooksExecuted += len(results)
 	}
 
 	// Create the tag
@@ -117,6 +143,18 @@ func Execute(ctx context.Context, req Request) (*Result, error) {
 			}
 			result.Pushed = true
 		}
+	}
+
+	// Run post-tag hooks
+	if !req.NoHooks && len(req.PostTagHooks) > 0 {
+		postHooks := hooks.CreateHooks(req.PostTagHooks, hooks.PostTag)
+		results, err := hooks.RunHooks(ctx, postHooks, hookCtx)
+		if err != nil {
+			// Post-tag hooks failing is a warning, not fatal
+			// Tag was already created
+			return result, fmt.Errorf("post-tag hook failed (tag already created): %w", err)
+		}
+		result.HooksExecuted += len(results)
 	}
 
 	return result, nil

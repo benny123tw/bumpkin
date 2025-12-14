@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/benny123tw/bumpkin/internal/config"
 	"github.com/benny123tw/bumpkin/internal/conventional"
 	"github.com/benny123tw/bumpkin/internal/executor"
 	"github.com/benny123tw/bumpkin/internal/git"
@@ -35,6 +36,7 @@ var (
 	flagRemote      string
 	flagDryRun      bool
 	flagNoPush      bool
+	flagNoHooks     bool
 	flagYes         bool
 	flagJSON        bool
 	flagShowVersion bool
@@ -106,6 +108,7 @@ func addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&flagRemote, "remote", "r", "origin", "Git remote name")
 	cmd.Flags().BoolVarP(&flagDryRun, "dry-run", "d", false, "Preview without making changes")
 	cmd.Flags().BoolVar(&flagNoPush, "no-push", false, "Create tag but don't push")
+	cmd.Flags().BoolVar(&flagNoHooks, "no-hooks", false, "Skip hook execution")
 	cmd.Flags().BoolVarP(&flagYes, "yes", "y", false, "Skip confirmation in non-interactive mode")
 	cmd.Flags().BoolVar(&flagJSON, "json", false, "Output result as JSON")
 	cmd.Flags().BoolVar(&flagShowVersion, "show-version", false, "Show version information")
@@ -224,6 +227,10 @@ func runNonInteractive(cmd *cobra.Command, repo *git.Repository) error {
 		return fmt.Errorf("confirmation required: use --yes flag to proceed")
 	}
 
+	// Load configuration
+	cwd, _ := os.Getwd()
+	cfg, _ := config.Load(cwd)
+
 	// Execute the bump
 	req := executor.Request{
 		Repository:    repo,
@@ -233,6 +240,9 @@ func runNonInteractive(cmd *cobra.Command, repo *git.Repository) error {
 		Remote:        flagRemote,
 		DryRun:        flagDryRun,
 		NoPush:        flagNoPush,
+		NoHooks:       flagNoHooks,
+		PreTagHooks:   cfg.Hooks.PreTag,
+		PostTagHooks:  cfg.Hooks.PostTag,
 	}
 
 	result, err := executor.Execute(context.Background(), req)
