@@ -66,31 +66,37 @@ func ParseBumpType(s string) (BumpType, error) {
 
 // Bump applies the specified bump type to a version and returns the new version
 func Bump(v Version, bumpType BumpType) Version {
-	// Clear prerelease and metadata for standard bumps
-	result := Version{
-		Major: v.Major,
-		Minor: v.Minor,
-		Patch: v.Patch,
-	}
-
 	switch bumpType {
 	case BumpPatch:
-		result.Patch++
+		return Version{
+			Major: v.Major,
+			Minor: v.Minor,
+			Patch: v.Patch + 1,
+		}
 	case BumpMinor:
-		result.Minor++
-		result.Patch = 0
+		return Version{
+			Major: v.Major,
+			Minor: v.Minor + 1,
+			Patch: 0,
+		}
 	case BumpMajor:
-		result.Major++
-		result.Minor = 0
-		result.Patch = 0
+		return Version{
+			Major: v.Major + 1,
+			Minor: 0,
+			Patch: 0,
+		}
 	case BumpRelease:
-		// Just strip prerelease, keep version numbers
-		// If already a release version, no change
-	case BumpCustom, BumpPrereleaseAlpha, BumpPrereleaseBeta, BumpPrereleaseRC:
-		// For custom and prerelease bumps, will be handled in prerelease.go
-		// Return the original version for now
+		return BumpToRelease(v)
+	case BumpPrereleaseAlpha:
+		return BumpPrerelease(v, "alpha")
+	case BumpPrereleaseBeta:
+		return BumpPrerelease(v, "beta")
+	case BumpPrereleaseRC:
+		return BumpPrerelease(v, "rc")
+	case BumpCustom:
+		// Custom versions are handled separately
+		return v
+	default:
 		return v
 	}
-
-	return result
 }

@@ -30,6 +30,10 @@ var (
 	flagMajor        bool
 	flagSetVersion   string
 	flagConventional bool
+	flagAlpha        bool
+	flagBeta         bool
+	flagRC           bool
+	flagRelease      bool
 
 	// Behavior flags
 	flagPrefix      string
@@ -103,6 +107,12 @@ func addFlags(cmd *cobra.Command) {
 		"Auto-detect bump type from conventional commits",
 	)
 
+	// Prerelease flags
+	cmd.Flags().BoolVar(&flagAlpha, "alpha", false, "Bump to alpha prerelease")
+	cmd.Flags().BoolVar(&flagBeta, "beta", false, "Bump to beta prerelease")
+	cmd.Flags().BoolVar(&flagRC, "rc", false, "Bump to release candidate")
+	cmd.Flags().BoolVar(&flagRelease, "release", false, "Promote prerelease to release")
+
 	// Behavior flags
 	cmd.Flags().StringVarP(&flagPrefix, "prefix", "p", "v", "Tag prefix")
 	cmd.Flags().StringVarP(&flagRemote, "remote", "r", "origin", "Git remote name")
@@ -129,7 +139,7 @@ func runRoot(cmd *cobra.Command, _ []string) error {
 
 	// Determine if we're in non-interactive mode
 	isNonInteractive := flagPatch || flagMinor || flagMajor || flagSetVersion != "" ||
-		flagConventional
+		flagConventional || flagAlpha || flagBeta || flagRC || flagRelease
 
 	// Open the repository from current directory
 	repo, err := git.OpenFromCurrent()
@@ -162,10 +172,22 @@ func runNonInteractive(cmd *cobra.Command, repo *git.Repository) error {
 	if flagConventional {
 		bumpCount++
 	}
+	if flagAlpha {
+		bumpCount++
+	}
+	if flagBeta {
+		bumpCount++
+	}
+	if flagRC {
+		bumpCount++
+	}
+	if flagRelease {
+		bumpCount++
+	}
 
 	if bumpCount > 1 {
 		err := fmt.Errorf(
-			"only one of --patch, --minor, --major, --set-version, or --conventional can be specified",
+			"only one bump type flag can be specified",
 		)
 		return handleError(cmd, err, "")
 	}
@@ -175,6 +197,14 @@ func runNonInteractive(cmd *cobra.Command, repo *git.Repository) error {
 	var customVersion string
 
 	switch {
+	case flagAlpha:
+		bumpType = version.BumpPrereleaseAlpha
+	case flagBeta:
+		bumpType = version.BumpPrereleaseBeta
+	case flagRC:
+		bumpType = version.BumpPrereleaseRC
+	case flagRelease:
+		bumpType = version.BumpRelease
 	case flagPatch:
 		bumpType = version.BumpPatch
 	case flagMinor:

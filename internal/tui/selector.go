@@ -37,12 +37,87 @@ func CreateVersionOptions(current version.Version, prefix string) []VersionOptio
 			BumpType:    version.BumpMajor,
 			NewVersion:  version.Bump(current, version.BumpMajor).StringWithPrefix(prefix),
 		},
-		{
-			Label:       "custom",
-			Description: "Enter a custom version",
-			BumpType:    version.BumpCustom,
-			NewVersion:  "...",
-		},
+	}
+
+	// Add prerelease options
+	options = append(options, createPrereleaseOptions(current, prefix)...)
+
+	// Add custom option at the end
+	options = append(options, VersionOption{
+		Label:       "custom",
+		Description: "Enter a custom version",
+		BumpType:    version.BumpCustom,
+		NewVersion:  "...",
+	})
+
+	return options
+}
+
+// createPrereleaseOptions creates prerelease version options
+func createPrereleaseOptions(current version.Version, prefix string) []VersionOption {
+	var options []VersionOption
+
+	// If current version is a prerelease, show relevant options
+	if current.IsPrerelease() {
+		preType := current.PrereleaseType()
+
+		// Show option to increment current prerelease type
+		switch preType {
+		case "alpha":
+			options = append(options, VersionOption{
+				Label:       "alpha",
+				Description: "Increment alpha version",
+				BumpType:    version.BumpPrereleaseAlpha,
+				NewVersion: version.Bump(current, version.BumpPrereleaseAlpha).
+					StringWithPrefix(prefix),
+			})
+			options = append(options, VersionOption{
+				Label:       "beta",
+				Description: "Promote to beta",
+				BumpType:    version.BumpPrereleaseBeta,
+				NewVersion: version.Bump(current, version.BumpPrereleaseBeta).
+					StringWithPrefix(prefix),
+			})
+		case "beta":
+			options = append(options, VersionOption{
+				Label:       "beta",
+				Description: "Increment beta version",
+				BumpType:    version.BumpPrereleaseBeta,
+				NewVersion: version.Bump(current, version.BumpPrereleaseBeta).
+					StringWithPrefix(prefix),
+			})
+			options = append(options, VersionOption{
+				Label:       "rc",
+				Description: "Promote to release candidate",
+				BumpType:    version.BumpPrereleaseRC,
+				NewVersion: version.Bump(current, version.BumpPrereleaseRC).
+					StringWithPrefix(prefix),
+			})
+		case "rc":
+			options = append(options, VersionOption{
+				Label:       "rc",
+				Description: "Increment release candidate",
+				BumpType:    version.BumpPrereleaseRC,
+				NewVersion: version.Bump(current, version.BumpPrereleaseRC).
+					StringWithPrefix(prefix),
+			})
+		}
+
+		// Always show release option for prereleases
+		options = append(options, VersionOption{
+			Label:       "release",
+			Description: "Promote to stable release",
+			BumpType:    version.BumpRelease,
+			NewVersion:  version.Bump(current, version.BumpRelease).StringWithPrefix(prefix),
+		})
+	} else {
+		// For stable releases, show alpha option
+		options = append(options, VersionOption{
+			Label:       "alpha",
+			Description: "Start new alpha prerelease",
+			BumpType:    version.BumpPrereleaseAlpha,
+			NewVersion:  version.Bump(current, version.BumpPrereleaseAlpha).StringWithPrefix(prefix),
+		})
 	}
 
 	return options
