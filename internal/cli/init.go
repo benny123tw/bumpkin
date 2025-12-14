@@ -40,23 +40,23 @@ var initCmd = &cobra.Command{
 This command creates a starter configuration file in the current directory
 with sensible defaults and commented examples for hooks.`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
-		configFile := ".bumpkin.yaml"
+		const defaultConfigFile = ".bumpkin.yaml"
+		configFiles := []string{defaultConfigFile, ".bumpkin.yml"}
 
-		// Check if config already exists (both .yaml and .yml)
-		if _, err := os.Stat(".bumpkin.yaml"); err == nil {
-			return fmt.Errorf(".bumpkin.yaml already exists")
-		}
-		if _, err := os.Stat(".bumpkin.yml"); err == nil {
-			return fmt.Errorf(".bumpkin.yml already exists")
+		// Check if config already exists
+		for _, f := range configFiles {
+			if _, err := os.Stat(f); err == nil {
+				return fmt.Errorf("%s already exists", f)
+			}
 		}
 
 		// Write config file
 		//nolint:gosec // Config file needs to be readable by user
-		if err := os.WriteFile(configFile, []byte(configTemplate), 0o644); err != nil {
-			return fmt.Errorf("failed to create %s: %w", configFile, err)
+		if err := os.WriteFile(defaultConfigFile, []byte(configTemplate), 0o644); err != nil {
+			return fmt.Errorf("failed to create %s: %w", defaultConfigFile, err)
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Created %s\n", configFile)
+		fmt.Fprintf(cmd.OutOrStdout(), "Created %s\n", defaultConfigFile)
 		return nil
 	},
 }
