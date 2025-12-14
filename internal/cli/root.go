@@ -139,6 +139,10 @@ func runRoot(cmd *cobra.Command, _ []string) error {
 		return nil
 	}
 
+	// Load configuration and apply defaults for unset flags
+	cfg, _ := config.LoadFile(flagConfig)
+	applyConfigDefaults(cmd, cfg)
+
 	// Determine if we're in non-interactive mode
 	isNonInteractive := flagPatch || flagMinor || flagMajor || flagSetVersion != "" ||
 		flagConventional || flagAlpha || flagBeta || flagRC || flagRelease
@@ -150,13 +154,23 @@ func runRoot(cmd *cobra.Command, _ []string) error {
 	}
 
 	if isNonInteractive {
-		return runNonInteractive(cmd, repo)
+		return runNonInteractive(cmd, repo, cfg)
 	}
 
-	return runInteractive(repo)
+	return runInteractive(repo, cfg)
 }
 
-func runNonInteractive(cmd *cobra.Command, repo *git.Repository) error {
+// applyConfigDefaults applies config file values when flags aren't explicitly set
+func applyConfigDefaults(cmd *cobra.Command, cfg *config.Config) {
+	if !cmd.Flags().Changed("prefix") && cfg.Prefix != "" {
+		flagPrefix = cfg.Prefix
+	}
+	if !cmd.Flags().Changed("remote") && cfg.Remote != "" {
+		flagRemote = cfg.Remote
+	}
+}
+
+func runNonInteractive(cmd *cobra.Command, repo *git.Repository, cfg *config.Config) error {
 	// Validate mutually exclusive flags
 	bumpCount := 0
 	if flagPatch {
@@ -261,9 +275,6 @@ func runNonInteractive(cmd *cobra.Command, repo *git.Repository) error {
 		return fmt.Errorf("confirmation required: use --yes flag to proceed")
 	}
 
-	// Load configuration
-	cfg, _ := config.LoadFile(flagConfig)
-
 	// Execute the bump
 	req := executor.Request{
 		Repository:    repo,
@@ -291,8 +302,8 @@ func runNonInteractive(cmd *cobra.Command, repo *git.Repository) error {
 	return outputText(cmd, result)
 }
 
-func runInteractive(repo *git.Repository) error {
-	cfg := tui.Config{
+func runInteractive(repo *git.Repository, _ *config.Config) error {
+	tuiCfg := tui.Config{
 		Repository: repo,
 		Prefix:     flagPrefix,
 		Remote:     flagRemote,
@@ -300,7 +311,7 @@ func runInteractive(repo *git.Repository) error {
 		NoPush:     flagNoPush,
 	}
 
-	return tui.Run(cfg)
+	return tui.Run(tuiCfg)
 }
 
 func handleError(cmd *cobra.Command, err error, context string) error {
