@@ -10,6 +10,8 @@ const (
 	PreTag HookType = "pre-tag"
 	// PostTag hooks run after the tag is created
 	PostTag HookType = "post-tag"
+	// PostPush hooks run after the tag is pushed (fail-open behavior)
+	PostPush HookType = "post-push"
 )
 
 // Hook represents a single hook command

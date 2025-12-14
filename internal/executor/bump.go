@@ -21,17 +21,19 @@ type Request struct {
 	NoHooks       bool   // If true, skip hook execution
 	PreTagHooks   []string
 	PostTagHooks  []string
+	PostPushHooks []string // Hooks to run after successful push (fail-open)
 }
 
 // Result contains the outcome of a version bump operation
 type Result struct {
-	PreviousVersion string
-	NewVersion      string
-	TagName         string
-	CommitHash      string
-	TagCreated      bool
-	Pushed          bool
-	HooksExecuted   int
+	PreviousVersion  string
+	NewVersion       string
+	TagName          string
+	CommitHash       string
+	TagCreated       bool
+	Pushed           bool
+	HooksExecuted    int
+	PostPushWarnings []string // Warnings from failed post-push hooks (fail-open)
 }
 
 // Execute performs a version bump operation
@@ -155,6 +157,14 @@ func Execute(ctx context.Context, req Request) (*Result, error) {
 			return result, fmt.Errorf("post-tag hook failed (tag already created): %w", err)
 		}
 		result.HooksExecuted += len(results)
+	}
+
+	// Run post-push hooks (only if push was successful)
+	if !req.NoHooks && result.Pushed && len(req.PostPushHooks) > 0 {
+		postPushHooks := hooks.CreateHooks(req.PostPushHooks, hooks.PostPush)
+		results, warnings := hooks.RunHooksFailOpen(ctx, postPushHooks, hookCtx)
+		result.HooksExecuted += len(results)
+		result.PostPushWarnings = warnings
 	}
 
 	return result, nil

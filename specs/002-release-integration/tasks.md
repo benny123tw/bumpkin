@@ -15,12 +15,12 @@
 
 ## User Stories Summary
 
-| Story | Title | Priority |
-|-------|-------|----------|
-| US1 | Post-Push Hook Phase | P1 |
-| US2 | Post-Push Notifications | P1 |
-| US3 | Multiple Post-Push Hooks | P2 |
-| US4 | TUI Post-Push Hook Display | P3 |
+| Story | Title | Priority | Status |
+|-------|-------|----------|--------|
+| US1 | Post-Push Hook Phase | P1 | ✅ Complete |
+| US2 | Post-Push Notifications | P1 | ✅ Complete |
+| US3 | Multiple Post-Push Hooks | P2 | ✅ Complete |
+| US4 | TUI Post-Push Hook Display | P3 | ✅ Complete |
 
 ---
 
@@ -28,9 +28,9 @@
 
 **Purpose**: Create feature branch and verify existing test infrastructure
 
-- [ ] T001 Create feature branch `002-release-integration` from main
-- [ ] T002 Verify all existing tests pass with `go test ./...`
-- [ ] T003 Verify linter passes with `golangci-lint run`
+- [X] T001 Create feature branch `002-release-integration` from main
+- [X] T002 Verify all existing tests pass with `go test ./...`
+- [X] T003 Verify linter passes with `golangci-lint run`
 
 ---
 
@@ -42,16 +42,16 @@
 
 ### Tests First (TDD)
 
-- [ ] T004 [P] Write test for `PostPush` HookType constant in `internal/hooks/runner_test.go`
-- [ ] T005 [P] Write test for `RunHooksFailOpen` function (continues on failure) in `internal/hooks/runner_test.go`
+- [X] T004 [P] Write test for `PostPush` HookType constant in `internal/hooks/runner_test.go`
+- [X] T005 [P] Write test for `RunHooksFailOpen` function (continues on failure) in `internal/hooks/runner_test.go`
 
 ### Implementation
 
-- [ ] T006 Add `PostPush HookType = "post-push"` constant in `internal/hooks/types.go`
-- [ ] T007 Implement `RunHooksFailOpen` function in `internal/hooks/runner.go`
-- [ ] T008 Verify tests T004, T005 now pass
+- [X] T006 Add `PostPush HookType = "post-push"` constant in `internal/hooks/types.go`
+- [X] T007 Implement `RunHooksFailOpen` function in `internal/hooks/runner.go`
+- [X] T008 Verify tests T004, T005 now pass
 
-**Checkpoint**: Foundation ready - PostPush type and fail-open runner available
+**Checkpoint**: ✅ Foundation ready - PostPush type and fail-open runner available
 
 ---
 
@@ -63,30 +63,30 @@
 
 ### Tests First (TDD)
 
-- [ ] T009 [P] [US1] Write test for config parsing `hooks.post-push` array in `internal/config/config_test.go`
-- [ ] T010 [P] [US1] Write test for empty post-push returns empty slice in `internal/config/config_test.go`
-- [ ] T011 [P] [US1] Write test for post-push hooks preserve order in `internal/config/config_test.go`
-- [ ] T012 [P] [US1] Write test for executor post-push hooks execute after push in `internal/executor/bump_test.go`
-- [ ] T013 [P] [US1] Write test for executor skips post-push when `--no-push` in `internal/executor/bump_test.go`
-- [ ] T014 [P] [US1] Write test for executor skips post-push when push fails in `internal/executor/bump_test.go`
-- [ ] T015 [P] [US1] Write test for post-push failure is warning (tag remains pushed) in `internal/executor/bump_test.go`
+- [X] T009 [P] [US1] Write test for config parsing `hooks.post-push` array in `internal/config/config_test.go`
+- [X] T010 [P] [US1] Write test for empty post-push returns empty slice in `internal/config/config_test.go`
+- [X] T011 [P] [US1] Write test for post-push hooks preserve order in `internal/config/config_test.go`
+- [X] T012 [P] [US1] Write test for executor post-push hooks execute after push in `internal/executor/bump_test.go`
+- [X] T013 [P] [US1] Write test for executor skips post-push when `--no-push` in `internal/executor/bump_test.go`
+- [X] T014 [P] [US1] Write test for executor skips post-push when push fails in `internal/executor/bump_test.go`
+- [X] T015 [P] [US1] Write test for post-push failure is warning (tag remains pushed) in `internal/executor/bump_test.go`
 
 ### Implementation
 
-- [ ] T016 [US1] Add `PostPush []string` to `Hooks` struct in `internal/config/config.go`
-- [ ] T017 [US1] Update `Merge` method to handle post-push hooks in `internal/config/config.go`
-- [ ] T018 [US1] Add `PostPushHooks []string` to `Request` struct in `internal/executor/bump.go`
-- [ ] T019 [US1] Add `PostPushWarnings []string` to `Result` struct in `internal/executor/bump.go`
-- [ ] T020 [US1] Implement post-push hook execution after push in `internal/executor/bump.go`
-- [ ] T021 [US1] Verify tests T009-T015 now pass
+- [X] T016 [US1] Add `PostPush []string` to `Hooks` struct in `internal/config/config.go`
+- [X] T017 [US1] Update `Merge` method to handle post-push hooks in `internal/config/config.go`
+- [X] T018 [US1] Add `PostPushHooks []string` to `Request` struct in `internal/executor/bump.go`
+- [X] T019 [US1] Add `PostPushWarnings []string` to `Result` struct in `internal/executor/bump.go`
+- [X] T020 [US1] Implement post-push hook execution after push in `internal/executor/bump.go`
+- [X] T021 [US1] Verify tests T009-T015 now pass
 
 ### CLI Integration
 
-- [ ] T022 [P] [US1] Write test for config post-push hooks passed to executor in `internal/cli/root_test.go`
-- [ ] T023 [US1] Pass `PostPushHooks` from config to executor in `internal/cli/root.go`
-- [ ] T024 [US1] Verify test T022 passes
+- [X] T022 [P] [US1] Write test for config post-push hooks passed to executor in `internal/cli/root_test.go`
+- [X] T023 [US1] Pass `PostPushHooks` from config to executor in `internal/cli/root.go`
+- [X] T024 [US1] Verify test T022 passes
 
-**Checkpoint**: User Story 1 complete - post-push hooks execute after successful push
+**Checkpoint**: ✅ User Story 1 complete - post-push hooks execute after successful push
 
 ---
 
@@ -98,14 +98,14 @@
 
 ### Tests First (TDD)
 
-- [ ] T025 [P] [US2] Write test for BUMPKIN_* env vars available to post-push hooks in `internal/hooks/runner_test.go`
+- [X] T025 [P] [US2] Write test for BUMPKIN_* env vars available to post-push hooks in `internal/hooks/runner_test.go`
 
 ### Implementation
 
-- [ ] T026 [US2] Verify post-push hooks receive same env vars as pre-tag/post-tag in `internal/executor/bump.go`
-- [ ] T027 [US2] Verify test T025 passes
+- [X] T026 [US2] Verify post-push hooks receive same env vars as pre-tag/post-tag in `internal/executor/bump.go`
+- [X] T027 [US2] Verify test T025 passes
 
-**Checkpoint**: User Story 2 complete - environment variables available in post-push hooks
+**Checkpoint**: ✅ User Story 2 complete - environment variables available in post-push hooks
 
 ---
 
@@ -117,16 +117,16 @@
 
 ### Tests First (TDD)
 
-- [ ] T028 [P] [US3] Write test for multiple post-push hooks execute in order in `internal/executor/bump_test.go`
-- [ ] T029 [P] [US3] Write test for fail-open: remaining hooks run even if one fails in `internal/executor/bump_test.go`
+- [X] T028 [P] [US3] Write test for multiple post-push hooks execute in order in `internal/executor/bump_test.go`
+- [X] T029 [P] [US3] Write test for fail-open: remaining hooks run even if one fails in `internal/executor/bump_test.go`
 
 ### Implementation
 
-- [ ] T030 [US3] Ensure `RunHooksFailOpen` is used for post-push (not `RunHooks`) in `internal/executor/bump.go`
-- [ ] T031 [US3] Collect all warnings from failed hooks in result in `internal/executor/bump.go`
-- [ ] T032 [US3] Verify tests T028-T029 pass
+- [X] T030 [US3] Ensure `RunHooksFailOpen` is used for post-push (not `RunHooks`) in `internal/executor/bump.go`
+- [X] T031 [US3] Collect all warnings from failed hooks in result in `internal/executor/bump.go`
+- [X] T032 [US3] Verify tests T028-T029 pass
 
-**Checkpoint**: User Story 3 complete - multiple hooks with fail-open behavior
+**Checkpoint**: ✅ User Story 3 complete - multiple hooks with fail-open behavior
 
 ---
 
@@ -138,16 +138,16 @@
 
 ### Tests First (TDD)
 
-- [ ] T033 [P] [US4] Write test for TUI model can receive post-push warnings in `internal/tui/model_test.go` (create if needed)
+- [X] T033 [P] [US4] Write test for TUI model can receive post-push warnings in `internal/tui/model_test.go` (create if needed)
 
 ### Implementation
 
-- [ ] T034 [US4] Add `PostPushHooks []string` to TUI Config in `internal/tui/model.go`
-- [ ] T035 [US4] Add post-push hook display to result screen in `internal/tui/model.go`
-- [ ] T036 [US4] Show warnings (yellow/orange) for failed post-push hooks in `internal/tui/model.go`
-- [ ] T037 [US4] Verify test T033 passes
+- [X] T034 [US4] Add `PostPushHooks []string` to TUI Config in `internal/tui/model.go`
+- [X] T035 [US4] Add post-push hook display to result screen in `internal/tui/model.go`
+- [X] T036 [US4] Show warnings (yellow/orange) for failed post-push hooks in `internal/tui/model.go`
+- [X] T037 [US4] Verify test T033 passes
 
-**Checkpoint**: User Story 4 complete - TUI shows post-push results
+**Checkpoint**: ✅ User Story 4 complete - TUI shows post-push results
 
 ---
 
@@ -157,14 +157,14 @@
 
 ### Tests First (TDD)
 
-- [ ] T038 [P] Write test for `--dry-run` shows post-push hooks without executing in `internal/cli/root_test.go`
-- [ ] T039 [P] Write test for `--no-hooks` skips post-push hooks in `internal/cli/root_test.go`
+- [X] T038 [P] Write test for `--dry-run` shows post-push hooks without executing in `internal/cli/root_test.go`
+- [X] T039 [P] Write test for `--no-hooks` skips post-push hooks in `internal/cli/root_test.go`
 
 ### Implementation
 
-- [ ] T040 Update dry-run output to show post-push hooks in `internal/cli/root.go`
-- [ ] T041 Verify `--no-hooks` already skips post-push (should work from US1) in `internal/cli/root.go`
-- [ ] T042 Verify tests T038-T039 pass
+- [X] T040 Update dry-run output to show post-push hooks in `internal/cli/root.go`
+- [X] T041 Verify `--no-hooks` already skips post-push (should work from US1) in `internal/cli/root.go`
+- [X] T042 Verify tests T038-T039 pass
 
 ---
 
@@ -172,12 +172,12 @@
 
 **Purpose**: Final verification and cleanup
 
-- [ ] T043 Run all tests with `go test ./...` - ensure all pass
-- [ ] T044 Run linter with `golangci-lint run` - fix any issues
-- [ ] T045 Apply formatting with `golangci-lint fmt`
-- [ ] T046 Manual integration test: create test repo, configure post-push hooks, run bump
-- [ ] T047 Update README.md with post-push hook documentation
-- [ ] T048 Commit all changes with conventional commit message
+- [X] T043 Run all tests with `go test ./...` - ensure all pass
+- [X] T044 Run linter with `golangci-lint run` - fix any issues
+- [X] T045 Apply formatting with `golangci-lint fmt`
+- [X] T046 Manual integration test: create test repo, configure post-push hooks, run bump
+- [X] T047 Update README.md with post-push hook documentation
+- [X] T048 Commit all changes with conventional commit message
 
 ---
 
@@ -214,40 +214,6 @@ Phase 1 (Setup) → Phase 2 (Foundational) → Phase 3-6 (User Stories) → Phas
 
 ---
 
-## Parallel Opportunities
-
-### Phase 2: Foundational Tests
-
-```bash
-# Can run in parallel:
-T004: Test for PostPush constant
-T005: Test for RunHooksFailOpen
-```
-
-### Phase 3: User Story 1 Tests
-
-```bash
-# Can run in parallel:
-T009: Test config parsing post-push
-T010: Test empty post-push
-T011: Test post-push order
-T012: Test executor post-push
-T013: Test --no-push skips
-T014: Test push fail skips
-T015: Test warning not error
-```
-
-### After US1 Complete: Stories in Parallel
-
-```bash
-# Different team members can work on:
-Developer A: US2 (T025-T027)
-Developer B: US3 (T028-T032)
-Developer C: US4 (T033-T037)
-```
-
----
-
 ## Implementation Strategy
 
 ### MVP First (User Story 1 Only)
@@ -255,16 +221,11 @@ Developer C: US4 (T033-T037)
 1. ✅ Phase 1: Setup (T001-T003)
 2. ✅ Phase 2: Foundational (T004-T008)
 3. ✅ Phase 3: User Story 1 (T009-T024)
-4. **STOP and VALIDATE**: Test post-push hooks work end-to-end
-5. Can ship MVP here!
-
-### Full Implementation
-
-Continue with:
-- Phase 4: User Story 2 (env vars)
-- Phase 5: User Story 3 (multi-hook)
-- Phase 6: User Story 4 (TUI)
-- Phase 7-8: Polish
+4. ✅ Phase 4: User Story 2 (T025-T027)
+5. ✅ Phase 5: User Story 3 (T028-T032)
+6. ✅ Phase 6: User Story 4 (T033-T037)
+7. ✅ Phase 7: CLI Enhancements (T038-T042)
+8. ✅ Phase 8: Polish (T043-T048)
 
 ---
 
@@ -275,4 +236,4 @@ Continue with:
 - [US#] label maps task to specific user story
 - Commit after each phase or logical group
 - Stop at any checkpoint to validate independently
-- Total: 48 tasks
+- Total: 48 tasks - **ALL COMPLETE**

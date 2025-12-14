@@ -238,3 +238,150 @@ func getCurrentBranch(t *testing.T, dir string) string {
 	require.NoError(t, err)
 	return strings.TrimSpace(string(output))
 }
+
+// T012: Test post-push hooks execute after successful push
+func TestExecute_PostPushHooksAfterPush(t *testing.T) {
+	// Create remote
+	remoteDir := t.TempDir()
+	runGit(t, remoteDir, "init", "--bare")
+
+	// Create local repo with remote
+	tmpDir := t.TempDir()
+	initRealGitRepo(t, tmpDir)
+	runGit(t, tmpDir, "remote", "add", "origin", remoteDir)
+
+	branch := getCurrentBranch(t, tmpDir)
+	runGit(t, tmpDir, "push", "-u", "origin", branch)
+
+	createTag(t, tmpDir)
+	runGit(t, tmpDir, "push", "origin", "v1.0.0")
+	createCommit(t, tmpDir, "feat: new feature")
+
+	repo, err := git.Open(tmpDir)
+	require.NoError(t, err)
+
+	// Create a marker file to verify post-push hooks ran
+	markerFile := filepath.Join(tmpDir, "post-push-ran.txt")
+
+	result, err := Execute(context.Background(), Request{
+		Repository:    repo,
+		BumpType:      version.BumpMinor,
+		Prefix:        "v",
+		Remote:        "origin",
+		PostPushHooks: []string{"echo 'post-push executed' > " + markerFile},
+	})
+
+	require.NoError(t, err)
+	assert.True(t, result.TagCreated)
+	assert.True(t, result.Pushed)
+
+	// Verify post-push hook ran
+	_, err = os.Stat(markerFile)
+	assert.NoError(t, err, "Post-push hook should have created marker file")
+}
+
+// T013: Test post-push hooks skip when --no-push
+func TestExecute_PostPushHooksSkippedWithNoPush(t *testing.T) {
+	tmpDir := t.TempDir()
+	initRealGitRepo(t, tmpDir)
+
+	createTag(t, tmpDir)
+	createCommit(t, tmpDir, "feat: new feature")
+
+	repo, err := git.Open(tmpDir)
+	require.NoError(t, err)
+
+	// Create a marker file path - should NOT be created
+	markerFile := filepath.Join(tmpDir, "post-push-should-not-run.txt")
+
+	result, err := Execute(context.Background(), Request{
+		Repository:    repo,
+		BumpType:      version.BumpMinor,
+		Prefix:        "v",
+		NoPush:        true, // No push = no post-push hooks
+		PostPushHooks: []string{"echo 'should not run' > " + markerFile},
+	})
+
+	require.NoError(t, err)
+	assert.True(t, result.TagCreated)
+	assert.False(t, result.Pushed)
+
+	// Verify post-push hook did NOT run
+	_, err = os.Stat(markerFile)
+	assert.True(t, os.IsNotExist(err), "Post-push hook should NOT have run with --no-push")
+}
+
+// T014: Test post-push hooks skip when push fails
+func TestExecute_PostPushHooksSkippedWhenPushFails(t *testing.T) {
+	tmpDir := t.TempDir()
+	initRealGitRepo(t, tmpDir)
+
+	createTag(t, tmpDir)
+	createCommit(t, tmpDir, "feat: new feature")
+
+	repo, err := git.Open(tmpDir)
+	require.NoError(t, err)
+
+	// Create a marker file path - should NOT be created
+	markerFile := filepath.Join(tmpDir, "post-push-should-not-run.txt")
+
+	// No remote configured, so push will be skipped (not fail)
+	result, err := Execute(context.Background(), Request{
+		Repository:    repo,
+		BumpType:      version.BumpMinor,
+		Prefix:        "v",
+		Remote:        "origin", // Remote doesn't exist
+		PostPushHooks: []string{"echo 'should not run' > " + markerFile},
+	})
+
+	require.NoError(t, err)
+	assert.True(t, result.TagCreated)
+	assert.False(t, result.Pushed) // Push didn't happen
+
+	// Verify post-push hook did NOT run
+	_, err = os.Stat(markerFile)
+	assert.True(
+		t,
+		os.IsNotExist(err),
+		"Post-push hook should NOT have run when push failed/skipped",
+	)
+}
+
+// T015: Test post-push hook failure is warning (tag remains pushed)
+func TestExecute_PostPushHookFailureIsWarning(t *testing.T) {
+	// Create remote
+	remoteDir := t.TempDir()
+	runGit(t, remoteDir, "init", "--bare")
+
+	// Create local repo with remote
+	tmpDir := t.TempDir()
+	initRealGitRepo(t, tmpDir)
+	runGit(t, tmpDir, "remote", "add", "origin", remoteDir)
+
+	branch := getCurrentBranch(t, tmpDir)
+	runGit(t, tmpDir, "push", "-u", "origin", branch)
+
+	createTag(t, tmpDir)
+	runGit(t, tmpDir, "push", "origin", "v1.0.0")
+	createCommit(t, tmpDir, "feat: new feature")
+
+	repo, err := git.Open(tmpDir)
+	require.NoError(t, err)
+
+	result, err := Execute(context.Background(), Request{
+		Repository:    repo,
+		BumpType:      version.BumpMinor,
+		Prefix:        "v",
+		Remote:        "origin",
+		PostPushHooks: []string{"exit 1"}, // This hook will fail
+	})
+
+	// Should NOT return error - post-push failures are warnings
+	require.NoError(t, err)
+	assert.True(t, result.TagCreated)
+	assert.True(t, result.Pushed) // Push should still succeed
+
+	// Should have warning about failed hook
+	assert.Len(t, result.PostPushWarnings, 1)
+	assert.Contains(t, result.PostPushWarnings[0], "exit 1")
+}
