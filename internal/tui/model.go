@@ -288,32 +288,36 @@ func (m Model) handleVersionSelectKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleCustomInputKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if msg.String() != keyEnter {
+	// Handle Enter key for submission
+	if msg.String() == keyEnter {
+		customVer := m.customInput.Value()
+		if customVer == "" {
+			return m, nil
+		}
+
+		// Validate version
+		_, err := version.Parse(customVer)
+		if err != nil {
+			m.err = fmt.Errorf("invalid version: %s", customVer)
+			return m, nil
+		}
+
+		// Add prefix if not present
+		if !strings.HasPrefix(customVer, m.config.Prefix) {
+			m.newVersion = m.config.Prefix + customVer
+		} else {
+			m.newVersion = customVer
+		}
+
+		m.state = StateConfirm
+		m.selectedConfirm = 0
 		return m, nil
 	}
 
-	customVer := m.customInput.Value()
-	if customVer == "" {
-		return m, nil
-	}
-
-	// Validate version
-	_, err := version.Parse(customVer)
-	if err != nil {
-		m.err = fmt.Errorf("invalid version: %s", customVer)
-		return m, nil
-	}
-
-	// Add prefix if not present
-	if !strings.HasPrefix(customVer, m.config.Prefix) {
-		m.newVersion = m.config.Prefix + customVer
-	} else {
-		m.newVersion = customVer
-	}
-
-	m.state = StateConfirm
-	m.selectedConfirm = 0
-	return m, nil
+	// Pass all other keys to the text input
+	var cmd tea.Cmd
+	m.customInput, cmd = m.customInput.Update(msg)
+	return m, cmd
 }
 
 func (m Model) handleConfirmKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
