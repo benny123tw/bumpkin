@@ -96,7 +96,7 @@ Output:
 
 ## Configuration
 
-Create `.bumpkin.yml` in your repository root:
+Create `.bumpkin.yaml` in your repository root:
 
 ```yaml
 prefix: "v"
@@ -122,7 +122,7 @@ bumpkin --patch
 
 ### Node.js Project
 
-`.bumpkin.yml`:
+`.bumpkin.yaml`:
 ```yaml
 hooks:
   pre_tag:
@@ -133,7 +133,7 @@ hooks:
 
 ### Go Project
 
-`.bumpkin.yml`:
+`.bumpkin.yaml`:
 ```yaml
 hooks:
   pre_tag:

@@ -39,7 +39,7 @@ No subcommands - single command with optional flags for non-interactive mode.
 |------|-------|------|---------|-------------|
 | `--remote` | | string | origin | Git remote to push to |
 | `--prefix` | | string | v | Tag prefix |
-| `--config` | `-c` | string | .bumpkin.yml | Config file path |
+| `--config` | `-c` | string | .bumpkin.yaml | Config file path |
 
 ### Output Flags
 
@@ -169,7 +169,7 @@ When hooks are executed, these variables are set:
 
 ## Configuration File
 
-Location: `.bumpkin.yml` (or `.bumpkin.yaml`) in repository root
+Location: `.bumpkin.yaml` (or `.bumpkin.yml`) in repository root
 
 ```yaml
 # Tag prefix (default: "v")

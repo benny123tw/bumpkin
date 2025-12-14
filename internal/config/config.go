@@ -32,13 +32,13 @@ func Default() *Config {
 }
 
 // Load loads configuration from the given directory
-// It looks for .bumpkin.yml or .bumpkin.yaml
+// It looks for .bumpkin.yaml or .bumpkin.yml
 func Load(dir string) (*Config, error) {
-	// Try .bumpkin.yml first
-	configPath := filepath.Join(dir, ".bumpkin.yml")
+	// Try .bumpkin.yaml first (preferred)
+	configPath := filepath.Join(dir, ".bumpkin.yaml")
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		// Try .bumpkin.yaml
-		configPath = filepath.Join(dir, ".bumpkin.yaml")
+		// Try .bumpkin.yml as fallback
+		configPath = filepath.Join(dir, ".bumpkin.yml")
 		if _, err := os.Stat(configPath); os.IsNotExist(err) {
 			// No config file, return defaults
 			return Default(), nil

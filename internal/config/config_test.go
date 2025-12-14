@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// T085: Test for loading .bumpkin.yml
+// T085: Test for loading .bumpkin.yaml
 func TestLoad(t *testing.T) {
 	tmpDir := t.TempDir()
 
@@ -22,7 +22,7 @@ hooks:
   post-tag:
     - echo "after tag"
 `
-	configPath := filepath.Join(tmpDir, ".bumpkin.yml")
+	configPath := filepath.Join(tmpDir, ".bumpkin.yaml")
 	//nolint:gosec // test file
 	err := os.WriteFile(configPath, []byte(configContent), 0o644)
 	require.NoError(t, err)
@@ -66,7 +66,7 @@ hooks:
     - git push
     - git push --tags
 `
-	configPath := filepath.Join(tmpDir, ".bumpkin.yml")
+	configPath := filepath.Join(tmpDir, ".bumpkin.yaml")
 	//nolint:gosec // test file
 	err := os.WriteFile(configPath, []byte(configContent), 0o644)
 	require.NoError(t, err)
@@ -104,7 +104,7 @@ func TestLoad_InvalidYAML(t *testing.T) {
 	configContent := `
 prefix: [invalid yaml
 `
-	configPath := filepath.Join(tmpDir, ".bumpkin.yml")
+	configPath := filepath.Join(tmpDir, ".bumpkin.yaml")
 	//nolint:gosec // test file
 	err := os.WriteFile(configPath, []byte(configContent), 0o644)
 	require.NoError(t, err)
@@ -143,7 +143,7 @@ hooks:
     - curl -X POST $SLACK_WEBHOOK
     - ./scripts/notify-team.sh
 `
-	configPath := filepath.Join(tmpDir, ".bumpkin.yml")
+	configPath := filepath.Join(tmpDir, ".bumpkin.yaml")
 	//nolint:gosec // test file
 	err := os.WriteFile(configPath, []byte(configContent), 0o644)
 	require.NoError(t, err)
@@ -165,7 +165,7 @@ hooks:
   pre-tag:
     - echo "before"
 `
-	configPath := filepath.Join(tmpDir, ".bumpkin.yml")
+	configPath := filepath.Join(tmpDir, ".bumpkin.yaml")
 	//nolint:gosec // test file
 	err := os.WriteFile(configPath, []byte(configContent), 0o644)
 	require.NoError(t, err)
@@ -188,7 +188,7 @@ hooks:
     - echo "third"
     - echo "fourth"
 `
-	configPath := filepath.Join(tmpDir, ".bumpkin.yml")
+	configPath := filepath.Join(tmpDir, ".bumpkin.yaml")
 	//nolint:gosec // test file
 	err := os.WriteFile(configPath, []byte(configContent), 0o644)
 	require.NoError(t, err)

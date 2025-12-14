@@ -59,7 +59,7 @@
 
 **Goal**: Enable running commands after successful tag push
 
-**Independent Test**: Configure post-push hooks in `.bumpkin.yml`, run bump, verify hooks execute after push
+**Independent Test**: Configure post-push hooks in `.bumpkin.yaml`, run bump, verify hooks execute after push
 
 ### Tests First (TDD)
 

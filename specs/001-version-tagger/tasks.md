@@ -210,7 +210,7 @@
 
 ### Tests for US4 - Configuration Loading
 
-- [ ] T085 [P] [US4] Write test for loading .bumpkin.yml in internal/config/config_test.go
+- [ ] T085 [P] [US4] Write test for loading .bumpkin.yaml in internal/config/config_test.go
 - [ ] T086 [P] [US4] Write test for default config when file missing in internal/config/config_test.go
 - [ ] T087 [US4] Implement Load function in internal/config/config.go (make T085-T086 pass)
 - [ ] T088 [P] [US4] Write test for config with hooks defined in internal/config/config_test.go

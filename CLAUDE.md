@@ -4,9 +4,9 @@ Auto-generated from all feature plans. Last updated: 2025-12-14
 
 ## Active Technologies
 - Go 1.24+ (002-release-integration)
-- N/A (file-based config: `.bumpkin.yml`) (002-release-integration)
+- N/A (file-based config: `.bumpkin.yaml`) (002-release-integration)
 - Go 1.24 + Cobra v1.10.2 (already in use for CLI) (004-basic-commands)
-- YAML files (`.bumpkin.yml` configuration) (004-basic-commands)
+- YAML files (`.bumpkin.yaml` configuration) (004-basic-commands)
 
 - Go 1.21+ (001-version-tagger)
 

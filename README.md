@@ -9,7 +9,7 @@ A semantic version tagger CLI for git repositories. Inspired by [antfu/bumpp](ht
 - **Conventional Commits** - Auto-detect version bump from commit history
 - **Prerelease Support** - Full alpha/beta/rc workflow
 - **Hook System** - Run scripts before/after tagging
-- **Configurable** - Via CLI flags or `.bumpkin.yml`
+- **Configurable** - Via CLI flags or `.bumpkin.yaml`
 
 ## Installation
 
@@ -98,7 +98,7 @@ bumpkin --patch --yes --remote upstream
 
 ## Configuration
 
-Create `.bumpkin.yml` in your repository root:
+Create `.bumpkin.yaml` in your repository root:
 
 ```yaml
 # Tag prefix (default: "v")

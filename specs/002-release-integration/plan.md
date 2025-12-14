@@ -21,7 +21,7 @@ Add a `post-push` hook phase to bumpkin that executes after successful tag push.
 - github.com/go-git/go-git/v5 (git operations)
 - gopkg.in/yaml.v3 (config parsing)
 
-**Storage**: N/A (file-based config: `.bumpkin.yml`)
+**Storage**: N/A (file-based config: `.bumpkin.yaml`)
 **Testing**: go test with github.com/stretchr/testify
 **Target Platform**: Cross-platform (Linux, macOS, Windows)
 **Project Type**: Single CLI application
@@ -113,7 +113,7 @@ internal/
 ### Phase 2: Config Schema Extension
 
 **Test First**:
-- Test parsing `.bumpkin.yml` with `hooks.post-push` array
+- Test parsing `.bumpkin.yaml` with `hooks.post-push` array
 - Test that empty post-push returns empty slice
 - Test that post-push hooks preserve order
 

@@ -127,7 +127,7 @@ func addFlags(cmd *cobra.Command) {
 	// Behavior flags
 	cmd.Flags().StringVarP(&flagPrefix, "prefix", "p", "v", "Tag prefix")
 	cmd.Flags().StringVarP(&flagRemote, "remote", "r", "origin", "Git remote name")
-	cmd.Flags().StringVarP(&flagConfig, "config", "C", ".bumpkin.yml", "Config file path")
+	cmd.Flags().StringVarP(&flagConfig, "config", "C", ".bumpkin.yaml", "Config file path")
 	cmd.Flags().BoolVarP(&flagDryRun, "dry-run", "d", false, "Preview without making changes")
 	cmd.Flags().BoolVar(&flagNoPush, "no-push", false, "Create tag but don't push")
 	cmd.Flags().BoolVar(&flagNoHooks, "no-hooks", false, "Skip hook execution")

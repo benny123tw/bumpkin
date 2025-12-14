@@ -93,7 +93,7 @@ func BumpMajor(v *semver.Version) *semver.Version
 
 ### 6. Configuration Format
 
-**Decision**: Use YAML configuration file (`.bumpkin.yml` or `.bumpkin.yaml`)
+**Decision**: Use YAML configuration file (`.bumpkin.yaml` or `.bumpkin.yml`)
 
 **Rationale**:
 - Human-readable and editable
@@ -103,7 +103,7 @@ func BumpMajor(v *semver.Version) *semver.Version
 
 **Configuration Structure**:
 ```yaml
-# .bumpkin.yml
+# .bumpkin.yaml
 prefix: "v"              # Tag prefix (default: "v")
 remote: "origin"         # Git remote (default: "origin")
 hooks:
@@ -265,7 +265,7 @@ require (
 
 ## Open Questions Resolved
 
-1. **Config file location**: `.bumpkin.yml` in repository root (standard pattern)
+1. **Config file location**: `.bumpkin.yaml` in repository root (standard pattern)
 2. **Tag format**: Annotated tags with version as message (matches goreleaser)
 3. **No existing tags**: Start from v0.0.0 (documented in edge cases)
 4. **Commit listing**: Reverse chronological, first line only for display

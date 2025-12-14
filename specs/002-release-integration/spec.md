@@ -27,7 +27,7 @@ As a developer, I want to run commands after a successful push so that I can tri
 
 **Acceptance Scenarios**:
 
-1. **Given** `.bumpkin.yml` contains `hooks.post-push` commands, **When** user runs a bump that pushes a tag, **Then** the post-push hooks execute after successful push.
+1. **Given** `.bumpkin.yaml` contains `hooks.post-push` commands, **When** user runs a bump that pushes a tag, **Then** the post-push hooks execute after successful push.
 
 2. **Given** the push fails (no remote, network error), **When** bumpkin cannot push the tag, **Then** post-push hooks do not execute.
 
@@ -49,7 +49,7 @@ As a developer, I want to send notifications after a tag is pushed so that my te
 
 **Acceptance Scenarios**:
 
-1. **Given** `.bumpkin.yml` contains a post-push hook like `curl -X POST $SLACK_WEBHOOK -d "New release $BUMPKIN_TAG"`, **When** tag is pushed, **Then** the notification is sent with correct version info.
+1. **Given** `.bumpkin.yaml` contains a post-push hook like `curl -X POST $SLACK_WEBHOOK -d "New release $BUMPKIN_TAG"`, **When** tag is pushed, **Then** the notification is sent with correct version info.
 
 2. **Given** notification hook uses BUMPKIN_* environment variables, **When** hook executes, **Then** all standard variables (BUMPKIN_VERSION, BUMPKIN_TAG, BUMPKIN_COMMIT, etc.) are available.
 
@@ -65,7 +65,7 @@ As a developer, I want to run multiple commands after push so that I can trigger
 
 **Acceptance Scenarios**:
 
-1. **Given** `.bumpkin.yml` contains multiple post-push hooks, **When** tag is pushed, **Then** hooks execute in the order defined.
+1. **Given** `.bumpkin.yaml` contains multiple post-push hooks, **When** tag is pushed, **Then** hooks execute in the order defined.
 
 2. **Given** one hook fails in a sequence, **When** failure occurs, **Then** subsequent hooks still execute (fail-open for notifications).
 
@@ -118,7 +118,7 @@ As a developer using the TUI, I want to see post-push hook execution results so 
 
 ### Configuration Schema
 
-The `.bumpkin.yml` hooks section extended with post-push:
+The `.bumpkin.yaml` hooks section extended with post-push:
 
 ```yaml
 hooks:
@@ -156,7 +156,7 @@ The following features were considered but explicitly excluded to align with CI/
 ### Measurable Outcomes
 
 - **SC-001**: Post-push hooks execute within 1 second of successful push completion.
-- **SC-002**: Users can configure post-push hooks in under 1 minute by adding lines to `.bumpkin.yml`.
+- **SC-002**: Users can configure post-push hooks in under 1 minute by adding lines to `.bumpkin.yaml`.
 - **SC-003**: Hook failures do not prevent successful tag creation and push.
 - **SC-004**: All BUMPKIN_* environment variables are available to post-push hooks.
 - **SC-005**: Dry-run accurately shows which post-push hooks would execute.

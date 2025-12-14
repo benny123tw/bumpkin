@@ -34,10 +34,10 @@ func TestInitCommand(t *testing.T) {
 	err = rootCmd.Execute()
 	require.NoError(t, err)
 
-	// Verify .bumpkin.yml was created
-	configPath := filepath.Join(tmpDir, ".bumpkin.yml")
+	// Verify .bumpkin.yaml was created
+	configPath := filepath.Join(tmpDir, ".bumpkin.yaml")
 	_, err = os.Stat(configPath)
-	require.NoError(t, err, ".bumpkin.yml should be created")
+	require.NoError(t, err, ".bumpkin.yaml should be created")
 
 	// Verify content has expected fields
 	content, err := os.ReadFile(configPath)
@@ -63,7 +63,7 @@ func TestInitCommand_ConfigExists(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create existing config file
-	configPath := filepath.Join(tmpDir, ".bumpkin.yml")
+	configPath := filepath.Join(tmpDir, ".bumpkin.yaml")
 	//nolint:gosec // Test file, permissions don't matter
 	err = os.WriteFile(configPath, []byte("existing: true"), 0o644)
 	require.NoError(t, err)
@@ -88,5 +88,5 @@ func TestInitCommand_Help(t *testing.T) {
 
 	output := buf.String()
 	assert.Contains(t, output, "init")
-	assert.Contains(t, output, ".bumpkin.yml")
+	assert.Contains(t, output, ".bumpkin.yaml")
 }
