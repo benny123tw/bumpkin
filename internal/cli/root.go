@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/charmbracelet/fang"
 	"github.com/spf13/cobra"
 
 	"github.com/benny123tw/bumpkin/internal/config"
@@ -408,7 +409,7 @@ func outputText(cmd *cobra.Command, result *executor.Result) error {
 
 // Execute runs the root command
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
+	if err := fang.Execute(context.Background(), rootCmd); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(GetExitCode(err))
 	}
