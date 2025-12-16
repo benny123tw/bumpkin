@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -86,9 +85,4 @@ func RenderCommitDetailOverlay(commit *git.Commit, width, height int) string {
 	)
 
 	return centered
-}
-
-// RenderOverlayHeader renders a simple header for the overlay
-func RenderOverlayHeader() string {
-	return fmt.Sprintf("%s Commit Details %s", "─", "─")
 }
