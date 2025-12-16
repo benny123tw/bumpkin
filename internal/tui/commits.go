@@ -152,6 +152,14 @@ func truncateString(s string, maxLen int) string {
 	return s[:maxLen-3] + "..."
 }
 
+// stringOrDefault returns the default value if the string is empty or whitespace
+func stringOrDefault(s, def string) string {
+	if strings.TrimSpace(s) == "" {
+		return def
+	}
+	return s
+}
+
 // RenderCommitListForViewport renders all commits without truncation for use in viewport
 // selectedIndex indicates which commit should be highlighted (-1 for no selection)
 func RenderCommitListForViewport(commits []*git.Commit, selectedIndex int) string {
@@ -162,10 +170,7 @@ func RenderCommitListForViewport(commits []*git.Commit, selectedIndex int) strin
 	var sb strings.Builder
 
 	for i, commit := range commits {
-		subject := commit.Subject
-		if strings.TrimSpace(subject) == "" {
-			subject = noMessagePlaceholder
-		}
+		subject := stringOrDefault(commit.Subject, noMessagePlaceholder)
 		display := ParseCommitForDisplay(commit.Hash, subject)
 
 		// Build the line content
@@ -180,18 +185,10 @@ func RenderCommitListForViewport(commits []*git.Commit, selectedIndex int) strin
 			style := GetCommitTypeStyle(display.Type, display.IsBreaking)
 			line.WriteString(style.Render(display.Type))
 			line.WriteString(" : ")
-			desc := display.Description
-			if strings.TrimSpace(desc) == "" {
-				desc = noMessagePlaceholder
-			}
-			line.WriteString(desc)
+			line.WriteString(stringOrDefault(display.Description, noMessagePlaceholder))
 		} else {
 			// Non-conventional commit
-			msg := display.RawMessage
-			if strings.TrimSpace(msg) == "" {
-				msg = noMessagePlaceholder
-			}
-			line.WriteString(msg)
+			line.WriteString(stringOrDefault(display.RawMessage, noMessagePlaceholder))
 		}
 
 		// Apply selection indicator
