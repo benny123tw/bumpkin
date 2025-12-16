@@ -3,8 +3,6 @@ package tui
 import (
 	"fmt"
 	"strings"
-
-	"github.com/benny123tw/bumpkin/internal/version"
 )
 
 // RenderConfirmation renders the confirmation view
@@ -62,11 +60,6 @@ func RenderConfirmation(
 	return sb.String()
 }
 
-// RenderExecuting renders the executing state
-func RenderExecuting(step string) string {
-	return fmt.Sprintf("%s %s...", SpinnerStyle.Render("⠋"), step)
-}
-
 // RenderSuccess renders the success state
 func RenderSuccess(result *ExecutionSummary) string {
 	var sb strings.Builder
@@ -121,28 +114,4 @@ type ExecutionSummary struct {
 	Pushed           bool
 	Remote           string
 	PostPushWarnings []string
-}
-
-// BumpTypeLabel returns a human-readable label for a bump type
-func BumpTypeLabel(bt version.BumpType) string {
-	switch bt {
-	case version.BumpPatch:
-		return "patch"
-	case version.BumpMinor:
-		return "minor"
-	case version.BumpMajor:
-		return "major"
-	case version.BumpCustom:
-		return "custom"
-	case version.BumpPrereleaseAlpha:
-		return "alpha"
-	case version.BumpPrereleaseBeta:
-		return "beta"
-	case version.BumpPrereleaseRC:
-		return "rc"
-	case version.BumpRelease:
-		return "release"
-	default:
-		return "unknown"
-	}
 }

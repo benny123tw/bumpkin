@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -10,10 +9,7 @@ import (
 
 // Commit display constants
 const (
-	conventionalCommitDescTruncate = 50 // Max length for conventional commit descriptions
-	nonConventionalCommitTruncate  = 60 // Max length for non-conventional commit messages
-	maxCommitsToDisplay            = 10 // Max commits to show before truncating
-	noMessagePlaceholder           = "(no message)"
+	noMessagePlaceholder = "(no message)"
 )
 
 // CommitDisplay represents a formatted commit for TUI display
@@ -49,107 +45,6 @@ func ParseCommitForDisplay(hash, message string) CommitDisplay {
 	}
 
 	return display
-}
-
-// RenderCommitListWithBadges renders commits with colored type badges
-func RenderCommitListWithBadges(commits []*git.Commit, maxDisplay int) string {
-	if len(commits) == 0 {
-		return WarningStyle.Render("No commits since last tag")
-	}
-
-	var sb strings.Builder
-
-	displayCount := len(commits)
-	if displayCount > maxDisplay {
-		displayCount = maxDisplay
-	}
-
-	for i := 0; i < displayCount; i++ {
-		commit := commits[i]
-		display := ParseCommitForDisplay(commit.Hash, commit.Subject)
-
-		// Hash
-		sb.WriteString(CommitHashStyle.Render(display.Hash))
-		sb.WriteString("  ")
-
-		if display.Type != "" {
-			// Conventional commit with type badge
-			style := GetCommitTypeStyle(display.Type, display.IsBreaking)
-			sb.WriteString(style.Render(display.Type))
-			sb.WriteString(" : ")
-			sb.WriteString(truncateString(display.Description, conventionalCommitDescTruncate))
-		} else {
-			// Non-conventional commit
-			sb.WriteString(truncateString(display.RawMessage, nonConventionalCommitTruncate))
-		}
-
-		sb.WriteString("\n")
-	}
-
-	// Show "and X more commits..." if truncated
-	if len(commits) > maxDisplay {
-		remaining := len(commits) - maxDisplay
-		sb.WriteString(HelpStyle.Render(
-			fmt.Sprintf("...and %d more commit(s)", remaining),
-		))
-		sb.WriteString("\n")
-	}
-
-	return sb.String()
-}
-
-// RenderCommitList renders a list of commits
-func RenderCommitList(commits []*git.Commit, maxHeight int) string {
-	if len(commits) == 0 {
-		return WarningStyle.Render("No commits since last tag")
-	}
-
-	var sb strings.Builder
-
-	// Limit commits to display
-	displayCommits := commits
-	truncated := false
-	if len(commits) > maxHeight {
-		displayCommits = commits[:maxHeight]
-		truncated = true
-	}
-
-	for _, commit := range displayCommits {
-		line := fmt.Sprintf(
-			"%s %s",
-			CommitHashStyle.Render(commit.ShortHash),
-			CommitMessageStyle.Render(truncateString(commit.Subject, 60)),
-		)
-		sb.WriteString(line)
-		sb.WriteString("\n")
-	}
-
-	if truncated {
-		remaining := len(commits) - maxHeight
-		sb.WriteString(
-			SubtitleStyle.Render(fmt.Sprintf("  ... and %d more commits", remaining)),
-		)
-		sb.WriteString("\n")
-	}
-
-	return sb.String()
-}
-
-// RenderCommitSummary renders a summary of commits
-func RenderCommitSummary(commits []*git.Commit) string {
-	if len(commits) == 0 {
-		return "No commits since last tag"
-	}
-
-	return fmt.Sprintf("%d commit(s) since last tag", len(commits))
-}
-
-// truncateString truncates a string to maxLen and adds ellipsis if needed
-func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen-3] + "..."
 }
 
 // stringOrDefault returns the default value if the string is empty or whitespace
