@@ -218,7 +218,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Populate commits pane with rendered commit list
-		m.commitsPane.SetContent(RenderCommitListForViewport(m.commits))
+		m.commitsPane.SetContent(RenderCommitListForViewport(m.commits, m.selectedCommitIndex))
 
 		// Go directly to version selection (skip commit preview screen)
 		m.state = StateVersionSelect
@@ -320,21 +320,38 @@ func (m Model) handleVersionSelectKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	// Route arrow keys based on focused pane
 	if m.focusedPane == PaneCommits {
-		// When commits pane is focused, route navigation to viewport
+		// When commits pane is focused, move selection and scroll viewport
 		switch msg.String() {
 		case keyUp, keyK:
-			m.commitsPane.ScrollUp(1)
+			if m.selectedCommitIndex > 0 {
+				m.selectedCommitIndex--
+				// Update content to reflect new selection
+				m.commitsPane.SetContent(
+					RenderCommitListForViewport(m.commits, m.selectedCommitIndex),
+				)
+				// Scroll viewport to keep selection visible
+				if m.selectedCommitIndex < m.commitsPane.YOffset {
+					m.commitsPane.SetYOffset(m.selectedCommitIndex)
+				}
+			}
 			return m, nil
 		case keyDown, keyJ:
-			m.commitsPane.ScrollDown(1)
+			if m.selectedCommitIndex < len(m.commits)-1 {
+				m.selectedCommitIndex++
+				// Update content to reflect new selection
+				m.commitsPane.SetContent(
+					RenderCommitListForViewport(m.commits, m.selectedCommitIndex),
+				)
+				// Scroll viewport to keep selection visible
+				visibleEnd := m.commitsPane.YOffset + m.commitsPane.Height - 1
+				if m.selectedCommitIndex > visibleEnd {
+					m.commitsPane.SetYOffset(m.selectedCommitIndex - m.commitsPane.Height + 1)
+				}
+			}
 			return m, nil
 		case keyEnter:
 			// Enter on commits pane shows detail overlay
-			if len(m.commits) > 0 {
-				m.selectedCommitIndex = m.commitsPane.YOffset
-				if m.selectedCommitIndex >= len(m.commits) {
-					m.selectedCommitIndex = len(m.commits) - 1
-				}
+			if len(m.commits) > 0 && m.selectedCommitIndex < len(m.commits) {
 				m.showingDetail = true
 			}
 			return m, nil
@@ -518,18 +535,16 @@ func (m Model) renderVersionSelectView() string {
 		commitsBorderStyle = FocusedBorderStyle
 	}
 
-	// Build commits pane header with scroll position
+	// Build commits pane header with selection indicator
 	var commitsHeader string
-	if len(m.commits) > 0 && m.commitsPane.TotalLineCount() > m.commitsPane.Height {
-		// Show scroll position when content is scrollable
-		currentLine := m.commitsPane.YOffset + 1
-		totalLines := m.commitsPane.TotalLineCount()
+	if len(m.commits) > 0 {
+		// Show selected commit position
 		commitsHeader = fmt.Sprintf(
-			" Commits (%d total) [%d/%d] ",
-			len(m.commits), currentLine, totalLines,
+			" Commits [%d/%d] ",
+			m.selectedCommitIndex+1, len(m.commits),
 		)
 	} else {
-		commitsHeader = fmt.Sprintf(" Commits (%d total) ", len(m.commits))
+		commitsHeader = " Commits "
 	}
 
 	// Render commits pane content

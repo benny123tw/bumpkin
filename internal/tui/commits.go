@@ -153,41 +153,52 @@ func truncateString(s string, maxLen int) string {
 }
 
 // RenderCommitListForViewport renders all commits without truncation for use in viewport
-func RenderCommitListForViewport(commits []*git.Commit) string {
+// selectedIndex indicates which commit should be highlighted (-1 for no selection)
+func RenderCommitListForViewport(commits []*git.Commit, selectedIndex int) string {
 	if len(commits) == 0 {
 		return WarningStyle.Render("No new commits")
 	}
 
 	var sb strings.Builder
 
-	for _, commit := range commits {
+	for i, commit := range commits {
 		subject := commit.Subject
 		if strings.TrimSpace(subject) == "" {
 			subject = noMessagePlaceholder
 		}
 		display := ParseCommitForDisplay(commit.Hash, subject)
 
+		// Build the line content
+		var line strings.Builder
+
 		// Hash
-		sb.WriteString(CommitHashStyle.Render(display.Hash))
-		sb.WriteString("  ")
+		line.WriteString(CommitHashStyle.Render(display.Hash))
+		line.WriteString("  ")
 
 		if display.Type != "" {
 			// Conventional commit with type badge
 			style := GetCommitTypeStyle(display.Type, display.IsBreaking)
-			sb.WriteString(style.Render(display.Type))
-			sb.WriteString(" : ")
+			line.WriteString(style.Render(display.Type))
+			line.WriteString(" : ")
 			desc := display.Description
 			if strings.TrimSpace(desc) == "" {
 				desc = noMessagePlaceholder
 			}
-			sb.WriteString(truncateString(desc, conventionalCommitDescTruncate))
+			line.WriteString(truncateString(desc, conventionalCommitDescTruncate))
 		} else {
 			// Non-conventional commit
 			msg := display.RawMessage
 			if strings.TrimSpace(msg) == "" {
 				msg = noMessagePlaceholder
 			}
-			sb.WriteString(truncateString(msg, nonConventionalCommitTruncate))
+			line.WriteString(truncateString(msg, nonConventionalCommitTruncate))
+		}
+
+		// Apply selection indicator
+		if i == selectedIndex {
+			sb.WriteString(SelectedItemStyle.Render("▸ " + line.String()))
+		} else {
+			sb.WriteString("  " + line.String())
 		}
 
 		sb.WriteString("\n")

@@ -163,6 +163,11 @@ var (
 	UnfocusedBorderStyle = lipgloss.NewStyle().
 				Border(lipgloss.RoundedBorder()).
 				BorderForeground(mutedColor)
+
+	// SelectedItemStyle is used for the currently selected item in a list
+	SelectedItemStyle = lipgloss.NewStyle().
+				Foreground(primaryColor).
+				Bold(true)
 )
 
 // Icons
