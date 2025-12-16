@@ -2,7 +2,7 @@
 
 **Feature Branch**: `005-expandable-commit-history`  
 **Created**: 2025-12-16  
-**Status**: Draft  
+**Status**: Implemented  
 **Input**: User description: "Since we removed the commit preview view and moved to version selection view. We truncate the commit history and the commit messages. This is not good for users to review the history, do you have any ideas on how to improve this situation?"
 
 ## Problem Statement
@@ -25,11 +25,11 @@ Users navigate between panes using Tab/Shift-Tab, similar to lazygit. Both secti
 The layout uses a **version-focused ratio** (~30% commits, ~70% version). The primary task is selecting a version; the commits pane provides context when needed but doesn't dominate the screen. Version pane is the default focused pane on entry.
 
 ```
-┌─ Commits (12 total) ─────────────────────────────┐
-│ abc1234  feat : add new feature                  │
-│ def5678  fix  : fix login bug                    │
-│ ghi9012  feat!: breaking API change              │
-│ jkl3456  docs : update readme           [4/12] ↓ │
+┌─ Commits [4/12] ─────────────────────────────────┐
+│   abc1234  feat : add new feature                │
+│   def5678  fix  : fix login bug                  │
+│   ghi9012  feat!: breaking API change            │
+│ ▸ jkl3456  docs : update readme                  │
 └──────────────────────────────────────────────────┘
 ┌─ Version ════════════════════════════════════════┐
 │ Current: v1.0.0                                  │
@@ -41,8 +41,21 @@ The layout uses a **version-focused ratio** (~30% commits, ~70% version). The pr
 │                                                  │
 │                                                  │
 └──────────────════════════════════════════════════┘
-         [Tab] switch pane  [Enter] confirm
+  ↑/↓/j/k: navigate • h/l/tab: switch pane • gg/G: top/bottom • enter: select • q: quit
 ```
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| `↑` / `k` | Move selection up |
+| `↓` / `j` | Move selection down |
+| `Tab` / `h` / `l` | Switch between panes |
+| `gg` | Jump to first commit |
+| `G` | Jump to last commit |
+| `Enter` | Select version / View commit details |
+| `Escape` | Dismiss overlay / Go back |
+| `q` | Quit |
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -56,8 +69,8 @@ A developer using the version selection TUI wants to review commits before choos
 
 **Acceptance Scenarios**:
 
-1. **Given** user is in version selection pane, **When** user presses Tab, **Then** focus moves to commits pane with visual indicator
-2. **Given** user is in commits pane, **When** user presses Tab or Shift-Tab, **Then** focus moves to version selection pane
+1. **Given** user is in version selection pane, **When** user presses Tab (or h/l), **Then** focus moves to commits pane with visual indicator
+2. **Given** user is in commits pane, **When** user presses Tab, Shift-Tab, h, or l, **Then** focus moves to version selection pane
 3. **Given** user switches panes, **When** focus changes, **Then** the active pane has highlighted border and inactive pane is visually dimmed
 
 ---
@@ -72,9 +85,11 @@ A developer with 50+ commits since the last release wants to review all of them 
 
 **Acceptance Scenarios**:
 
-1. **Given** commits pane is focused with 50 commits, **When** user presses down arrow, **Then** list scrolls to show next commits
-2. **Given** user is scrolling commits, **When** scroll position changes, **Then** position indicator updates (e.g., "25/50")
-3. **Given** user is at bottom of list, **When** user presses down, **Then** scrolling stops (no wrap-around)
+1. **Given** commits pane is focused with 50 commits, **When** user presses down arrow (or j), **Then** selection moves to next commit and viewport scrolls if needed
+2. **Given** user is navigating commits, **When** selection changes, **Then** position indicator updates (e.g., "[25/50]") and selected commit is highlighted with `▸`
+3. **Given** user is at bottom of list, **When** user presses down, **Then** selection stays at last commit (no wrap-around)
+4. **Given** commits pane is focused, **When** user presses `gg`, **Then** selection jumps to first commit
+5. **Given** commits pane is focused, **When** user presses `G`, **Then** selection jumps to last commit
 
 ---
 
@@ -113,10 +128,10 @@ A developer has reviewed the commits and wants to select a version bump. They sw
 ### Edge Cases
 
 - What happens when there are 0 commits since last tag? Display message "No new commits" in commits pane.
-- What happens when there are fewer than 5 commits? Commits pane shows all commits without scroll indicator.
-- What happens when terminal is too small for dual panes? Fall back to single-pane view with Tab switching between full-screen panes.
+- What happens when there are fewer than 5 commits? Commits pane shows all commits; selection indicator still shows position (e.g., "[2/3]").
+- What happens when terminal is too small for dual panes? Both panes shrink proportionally with minimum height of 3 lines for commits pane.
 - What happens when commit message is empty? Display commit hash with placeholder text "(no message)".
-- How does system handle very long commit messages (500+ characters)? Detail overlay provides scrolling within the message view.
+- How does system handle very long commit messages? Full messages are displayed in the list (no truncation); detail overlay provides full view with metadata.
 - What happens if terminal is resized during use? Both panes adapt to new dimensions dynamically.
 
 ## Requirements *(mandatory)*
@@ -124,17 +139,19 @@ A developer has reviewed the commits and wants to select a version bump. They sw
 ### Functional Requirements
 
 - **FR-001**: System MUST display two distinct panes: commits pane (top, ~30% height) and version selection pane (bottom, ~70% height)
-- **FR-002**: System MUST allow users to switch focus between panes using Tab and Shift-Tab keys
+- **FR-002**: System MUST allow users to switch focus between panes using Tab, Shift-Tab, h, or l keys
 - **FR-003**: System MUST visually indicate which pane is currently focused (highlighted border vs dimmed)
 - **FR-004**: System MUST show all commits in the commits pane with vertical scrolling
-- **FR-005**: System MUST display scroll position indicator when commits exceed visible area (e.g., "5/25")
+- **FR-005**: System MUST display selection position indicator showing current selection (e.g., "[5/25]")
 - **FR-006**: System MUST allow users to view full commit message via Enter key on selected commit
 - **FR-007**: System MUST allow users to dismiss commit detail overlay and return to pane view
 - **FR-008**: System MUST preserve scroll position in commits pane when switching between panes
 - **FR-009**: System MUST show keyboard shortcut hints at bottom of screen (e.g., "[Tab] switch pane [Enter] confirm")
 - **FR-010**: System MUST maintain all existing version selection functionality in the version pane
-- **FR-011**: System MUST clearly highlight the currently selected item in the focused pane
+- **FR-011**: System MUST clearly highlight the currently selected item in the focused pane with a visual indicator (▸)
 - **FR-012**: System MUST default focus to version selection pane on initial display (version selection is the primary task)
+- **FR-013**: System MUST support vim-style navigation: j/k for up/down, gg for top, G for bottom
+- **FR-014**: System MUST display full commit messages without truncation in the commits list
 
 ### Key Entities
 
