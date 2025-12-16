@@ -74,6 +74,7 @@ type Model struct {
 	focusedPane         PaneType       // Which pane has focus (PaneVersion or PaneCommits)
 	showingDetail       bool           // Whether commit detail overlay is shown
 	selectedCommitIndex int            // Index of commit selected for detail view
+	waitingForG         bool           // Whether we're waiting for second 'g' in 'gg' sequence
 
 	// Window size
 	width  int
@@ -275,7 +276,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case "tab", "shift+tab":
+	case "tab", "shift+tab", "h", "l":
 		// Toggle focus between panes in version select state
 		if m.state == StateVersionSelect && !m.showingDetail {
 			if m.focusedPane == PaneVersion {
@@ -320,6 +321,21 @@ func (m Model) handleVersionSelectKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	// Route arrow keys based on focused pane
 	if m.focusedPane == PaneCommits {
+		// Handle gg sequence for jump to top
+		if m.waitingForG {
+			m.waitingForG = false
+			if msg.String() == "g" && len(m.commits) > 0 {
+				// gg: jump to top
+				m.selectedCommitIndex = 0
+				m.commitsPane.SetContent(
+					RenderCommitListForViewport(m.commits, m.selectedCommitIndex),
+				)
+				m.commitsPane.SetYOffset(0)
+				return m, nil
+			}
+			// Not 'g', fall through to normal handling
+		}
+
 		// When commits pane is focused, move selection and scroll viewport
 		switch msg.String() {
 		case keyUp, keyK:
@@ -347,6 +363,25 @@ func (m Model) handleVersionSelectKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				if m.selectedCommitIndex > visibleEnd {
 					m.commitsPane.SetYOffset(m.selectedCommitIndex - m.commitsPane.Height + 1)
 				}
+			}
+			return m, nil
+		case "g":
+			// Start gg sequence
+			m.waitingForG = true
+			return m, nil
+		case "G":
+			// Jump to bottom
+			if len(m.commits) > 0 {
+				m.selectedCommitIndex = len(m.commits) - 1
+				m.commitsPane.SetContent(
+					RenderCommitListForViewport(m.commits, m.selectedCommitIndex),
+				)
+				// Scroll to show selection at bottom of viewport
+				newOffset := m.selectedCommitIndex - m.commitsPane.Height + 1
+				if newOffset < 0 {
+					newOffset = 0
+				}
+				m.commitsPane.SetYOffset(newOffset)
 			}
 			return m, nil
 		case keyEnter:
@@ -644,7 +679,7 @@ func (m Model) renderHelp() string {
 		// Deprecated - kept for backwards compatibility
 		help = "enter: select version • q: quit"
 	case StateVersionSelect:
-		help = "↑/↓: navigate • tab: switch pane • enter: select • q: quit"
+		help = "↑/↓/j/k: navigate • h/l/tab: switch pane • gg/G: top/bottom • enter: select • q: quit"
 	case StateCustomInput:
 		help = "enter: confirm • esc: back"
 	case StateConfirm:
