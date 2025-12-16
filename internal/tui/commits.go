@@ -184,14 +184,14 @@ func RenderCommitListForViewport(commits []*git.Commit, selectedIndex int) strin
 			if strings.TrimSpace(desc) == "" {
 				desc = noMessagePlaceholder
 			}
-			line.WriteString(truncateString(desc, conventionalCommitDescTruncate))
+			line.WriteString(desc)
 		} else {
 			// Non-conventional commit
 			msg := display.RawMessage
 			if strings.TrimSpace(msg) == "" {
 				msg = noMessagePlaceholder
 			}
-			line.WriteString(truncateString(msg, nonConventionalCommitTruncate))
+			line.WriteString(msg)
 		}
 
 		// Apply selection indicator
