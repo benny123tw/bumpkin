@@ -13,6 +13,7 @@ const (
 	conventionalCommitDescTruncate = 50 // Max length for conventional commit descriptions
 	nonConventionalCommitTruncate  = 60 // Max length for non-conventional commit messages
 	maxCommitsToDisplay            = 10 // Max commits to show before truncating
+	noMessagePlaceholder           = "(no message)"
 )
 
 // CommitDisplay represents a formatted commit for TUI display
@@ -149,4 +150,56 @@ func truncateString(s string, maxLen int) string {
 		return s
 	}
 	return s[:maxLen-3] + "..."
+}
+
+// stringOrDefault returns the default value if the string is empty or whitespace
+func stringOrDefault(s, def string) string {
+	if strings.TrimSpace(s) == "" {
+		return def
+	}
+	return s
+}
+
+// RenderCommitListForViewport renders all commits without truncation for use in viewport
+// selectedIndex indicates which commit should be highlighted (-1 for no selection)
+func RenderCommitListForViewport(commits []*git.Commit, selectedIndex int) string {
+	if len(commits) == 0 {
+		return WarningStyle.Render("No new commits")
+	}
+
+	var sb strings.Builder
+
+	for i, commit := range commits {
+		subject := stringOrDefault(commit.Subject, noMessagePlaceholder)
+		display := ParseCommitForDisplay(commit.Hash, subject)
+
+		// Build the line content
+		var line strings.Builder
+
+		// Hash
+		line.WriteString(CommitHashStyle.Render(display.Hash))
+		line.WriteString("  ")
+
+		if display.Type != "" {
+			// Conventional commit with type badge
+			style := GetCommitTypeStyle(display.Type, display.IsBreaking)
+			line.WriteString(style.Render(display.Type))
+			line.WriteString(" : ")
+			line.WriteString(stringOrDefault(display.Description, noMessagePlaceholder))
+		} else {
+			// Non-conventional commit
+			line.WriteString(stringOrDefault(display.RawMessage, noMessagePlaceholder))
+		}
+
+		// Apply selection indicator
+		if i == selectedIndex {
+			sb.WriteString(SelectedItemStyle.Render("▸ " + line.String()))
+		} else {
+			sb.WriteString("  " + line.String())
+		}
+
+		sb.WriteString("\n")
+	}
+
+	return strings.TrimSuffix(sb.String(), "\n")
 }

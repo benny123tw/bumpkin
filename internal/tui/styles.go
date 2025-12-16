@@ -152,6 +152,24 @@ func GetCommitTypeStyle(commitType string, isBreaking bool) lipgloss.Style {
 	return lipgloss.NewStyle() // Default unstyled
 }
 
+// Pane border styles for dual-pane layout
+var (
+	// FocusedBorderStyle is used for the pane that currently has focus
+	FocusedBorderStyle = lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(primaryColor)
+
+	// UnfocusedBorderStyle is used for the pane that does not have focus
+	UnfocusedBorderStyle = lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(mutedColor)
+
+	// SelectedItemStyle is used for the currently selected item in a list
+	SelectedItemStyle = lipgloss.NewStyle().
+				Foreground(primaryColor).
+				Bold(true)
+)
+
 // Icons
 const (
 	IconCheck    = "✓"

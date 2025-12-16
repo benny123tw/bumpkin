@@ -183,7 +183,7 @@ func RenderVersionSelector(options []VersionOption, selected int) string {
 
 		// Show description for selected item
 		if i == selected {
-			desc := fmt.Sprintf("   %s", SubtitleStyle.Render(opt.Description))
+			desc := fmt.Sprintf("  %s", SubtitleStyle.Render(opt.Description))
 			sb.WriteString(desc)
 			sb.WriteString("\n")
 		}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/benny123tw/bumpkin/internal/conventional"
@@ -68,6 +69,13 @@ type Model struct {
 	// UI components
 	spinner spinner.Model
 
+	// Dual-pane layout
+	commitsPane         viewport.Model // Scrollable viewport for commits
+	focusedPane         PaneType       // Which pane has focus (PaneVersion or PaneCommits)
+	showingDetail       bool           // Whether commit detail overlay is shown
+	selectedCommitIndex int            // Index of commit selected for detail view
+	waitingForG         bool           // Whether we're waiting for second 'g' in 'gg' sequence
+
 	// Window size
 	width  int
 	height int
@@ -93,6 +101,11 @@ func New(cfg Config) Model {
 		customInput:     ti,
 		selectedOption:  0,
 		selectedConfirm: 0,
+		// Dual-pane layout initialization
+		commitsPane:         viewport.New(0, 0), // Sized on WindowSizeMsg
+		focusedPane:         PaneVersion,        // Default focus on version selection
+		showingDetail:       false,
+		selectedCommitIndex: 0,
 	}
 }
 
@@ -151,6 +164,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+
+		// Calculate pane heights for dual-pane layout
+		// Layout: ~30% commits pane (top), ~70% version pane (bottom)
+		headerHeight := 4 // title + dry run indicator + spacing
+		footerHeight := 2 // help text
+		availableHeight := m.height - headerHeight - footerHeight
+
+		if availableHeight > 0 {
+			// For small terminals (height < 16), we still show dual pane but minimal
+			commitsPaneHeight := availableHeight * 30 / 100
+			if commitsPaneHeight < 3 {
+				commitsPaneHeight = 3 // Minimum height for usability
+			}
+
+			// Account for border (2 chars: top + bottom)
+			m.commitsPane.Width = m.width - 2
+			m.commitsPane.Height = commitsPaneHeight - 2
+		}
+
 		return m, nil
 
 	case spinner.TickMsg:
@@ -185,6 +217,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 		}
+
+		// Populate commits pane with rendered commit list
+		m.commitsPane.SetContent(RenderCommitListForViewport(m.commits, m.selectedCommitIndex))
 
 		// Go directly to version selection (skip commit preview screen)
 		m.state = StateVersionSelect
@@ -222,6 +257,12 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case "esc":
+		// Dismiss overlay if showing
+		if m.showingDetail {
+			m.showingDetail = false
+			return m, nil
+		}
+
 		switch m.state {
 		case StateVersionSelect:
 			// No action - this is the first screen now
@@ -234,6 +275,17 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			// No action for these states
 		}
 		return m, nil
+
+	case "tab", "shift+tab", "h", "l":
+		// Toggle focus between panes in version select state
+		if m.state == StateVersionSelect && !m.showingDetail {
+			if m.focusedPane == PaneVersion {
+				m.focusedPane = PaneCommits
+			} else {
+				m.focusedPane = PaneVersion
+			}
+			return m, nil
+		}
 	}
 
 	switch m.state {
@@ -257,6 +309,92 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleVersionSelectKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	// Handle overlay dismiss first
+	if m.showingDetail {
+		if msg.String() == keyEnter || msg.String() == "esc" {
+			m.showingDetail = false
+			return m, nil
+		}
+		// Block other keys when overlay is showing
+		return m, nil
+	}
+
+	// Route arrow keys based on focused pane
+	if m.focusedPane == PaneCommits {
+		// Handle gg sequence for jump to top
+		if m.waitingForG {
+			m.waitingForG = false
+			if msg.String() == "g" && len(m.commits) > 0 {
+				// gg: jump to top
+				m.selectedCommitIndex = 0
+				m.commitsPane.SetContent(
+					RenderCommitListForViewport(m.commits, m.selectedCommitIndex),
+				)
+				m.commitsPane.SetYOffset(0)
+				return m, nil
+			}
+			// Not 'g', fall through to normal handling
+		}
+
+		// When commits pane is focused, move selection and scroll viewport
+		switch msg.String() {
+		case keyUp, keyK:
+			if m.selectedCommitIndex > 0 {
+				m.selectedCommitIndex--
+				// Update content to reflect new selection
+				m.commitsPane.SetContent(
+					RenderCommitListForViewport(m.commits, m.selectedCommitIndex),
+				)
+				// Scroll viewport to keep selection visible
+				if m.selectedCommitIndex < m.commitsPane.YOffset {
+					m.commitsPane.SetYOffset(m.selectedCommitIndex)
+				}
+			}
+			return m, nil
+		case keyDown, keyJ:
+			if m.selectedCommitIndex < len(m.commits)-1 {
+				m.selectedCommitIndex++
+				// Update content to reflect new selection
+				m.commitsPane.SetContent(
+					RenderCommitListForViewport(m.commits, m.selectedCommitIndex),
+				)
+				// Scroll viewport to keep selection visible
+				visibleEnd := m.commitsPane.YOffset + m.commitsPane.Height - 1
+				if m.selectedCommitIndex > visibleEnd {
+					m.commitsPane.SetYOffset(m.selectedCommitIndex - m.commitsPane.Height + 1)
+				}
+			}
+			return m, nil
+		case "g":
+			// Start gg sequence
+			m.waitingForG = true
+			return m, nil
+		case "G":
+			// Jump to bottom
+			if len(m.commits) > 0 {
+				m.selectedCommitIndex = len(m.commits) - 1
+				m.commitsPane.SetContent(
+					RenderCommitListForViewport(m.commits, m.selectedCommitIndex),
+				)
+				// Scroll to show selection at bottom of viewport
+				newOffset := m.selectedCommitIndex - m.commitsPane.Height + 1
+				if newOffset < 0 {
+					newOffset = 0
+				}
+				m.commitsPane.SetYOffset(newOffset)
+			}
+			return m, nil
+		case keyEnter:
+			// Enter on commits pane shows detail overlay
+			if len(m.commits) > 0 && m.selectedCommitIndex < len(m.commits) {
+				m.showingDetail = true
+			}
+			return m, nil
+		}
+		return m, nil
+	}
+
+	// Version pane is focused - handle version selection
 	switch msg.String() {
 	case keyUp, keyK:
 		if m.selectedOption > 0 {
@@ -386,6 +524,13 @@ func (m Model) View() string {
 		// StateCommitList is deprecated - both render the same view now
 		sb.WriteString(m.renderVersionSelectView())
 
+		// Render overlay on top if showing detail
+		if m.showingDetail && len(m.commits) > 0 && m.selectedCommitIndex < len(m.commits) {
+			commit := m.commits[m.selectedCommitIndex]
+			overlay := RenderCommitDetailOverlay(commit, m.width, m.height)
+			return overlay
+		}
+
 	case StateCustomInput:
 		sb.WriteString(m.renderCustomInputView())
 
@@ -417,22 +562,63 @@ func (m Model) renderVersionSelectView() string {
 		CurrentVersionStyle.Render(m.currentVersion.StringWithPrefix(m.config.Prefix)),
 	))
 
-	// Show commit history with badges (persistent display)
-	if len(m.commits) > 0 {
-		sb.WriteString(SubtitleStyle.Render(
-			fmt.Sprintf("%d Commits since the last version:", len(m.commits)),
-		))
-		sb.WriteString("\n\n")
-		sb.WriteString(RenderCommitListWithBadges(m.commits, maxCommitsToDisplay))
-		sb.WriteString("\n")
-	} else {
-		sb.WriteString(WarningStyle.Render("No commits since last tag"))
-		sb.WriteString("\n\n")
+	// Dual-pane layout: commits pane (top) + version pane (bottom)
+
+	// Commits pane with border based on focus
+	commitsBorderStyle := UnfocusedBorderStyle
+	if m.focusedPane == PaneCommits {
+		commitsBorderStyle = FocusedBorderStyle
 	}
 
-	sb.WriteString(SubtitleStyle.Render("Select version bump:"))
+	// Build commits pane header with selection indicator
+	var commitsHeader string
+	if len(m.commits) > 0 {
+		// Show selected commit position
+		commitsHeader = fmt.Sprintf(
+			" Commits [%d/%d] ",
+			m.selectedCommitIndex+1, len(m.commits),
+		)
+	} else {
+		commitsHeader = " Commits "
+	}
+
+	// Render commits pane content
+	var commitsContent string
+	if len(m.commits) > 0 {
+		commitsContent = m.commitsPane.View()
+	} else {
+		commitsContent = WarningStyle.Render("No new commits")
+	}
+
+	// Apply border and width to commits pane
+	commitsPaneWidth := m.width - 2 // Account for left/right margins
+	if commitsPaneWidth < 20 {
+		commitsPaneWidth = 20
+	}
+	commitsBox := commitsBorderStyle.
+		Width(commitsPaneWidth).
+		Render(commitsHeader + "\n" + commitsContent)
+
+	sb.WriteString(commitsBox)
 	sb.WriteString("\n")
-	sb.WriteString(RenderVersionSelector(m.versionOptions, m.selectedOption))
+
+	// Version pane with border based on focus
+	versionBorderStyle := UnfocusedBorderStyle
+	if m.focusedPane == PaneVersion {
+		versionBorderStyle = FocusedBorderStyle
+	}
+
+	// Build version pane content
+	versionHeader := " Version "
+	versionContent := SubtitleStyle.Render(" Select version bump:") + "\n" +
+		RenderVersionSelector(m.versionOptions, m.selectedOption)
+
+	// Apply border and width to version pane
+	versionBox := versionBorderStyle.
+		Width(commitsPaneWidth).
+		Render(versionHeader + "\n" + versionContent)
+
+	sb.WriteString(versionBox)
 
 	return sb.String()
 }
@@ -493,7 +679,7 @@ func (m Model) renderHelp() string {
 		// Deprecated - kept for backwards compatibility
 		help = "enter: select version • q: quit"
 	case StateVersionSelect:
-		help = "↑/↓: navigate • enter: select • q: quit"
+		help = "↑/↓/j/k: navigate • h/l/tab: switch pane • gg/G: top/bottom • enter: select • q: quit"
 	case StateCustomInput:
 		help = "enter: confirm • esc: back"
 	case StateConfirm:
