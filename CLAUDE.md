@@ -7,6 +7,8 @@ Auto-generated from all feature plans. Last updated: 2025-12-14
 - N/A (file-based config: `.bumpkin.yaml`) (002-release-integration)
 - Go 1.24 + Cobra v1.10.2 (already in use for CLI) (004-basic-commands)
 - YAML files (`.bumpkin.yaml` configuration) (004-basic-commands)
+- Go 1.24+ + charmbracelet/bubbletea v1.3.10, charmbracelet/bubbles v0.21.0, charmbracelet/lipgloss v1.1.0 (005-expandable-commit-history)
+- N/A (git repository read-only) (005-expandable-commit-history)
 
 - Go 1.21+ (001-version-tagger)
 
@@ -26,9 +28,9 @@ tests/
 Go 1.21+: Follow standard conventions
 
 ## Recent Changes
+- 005-expandable-commit-history: Added Go 1.24+ + charmbracelet/bubbletea v1.3.10, charmbracelet/bubbles v0.21.0, charmbracelet/lipgloss v1.1.0
 - 004-basic-commands: Added Go 1.24 + Cobra v1.10.2 (already in use for CLI)
 - 003-tui-commit-display: Added Go 1.24+
-- 002-release-integration: Added Go 1.24+
 
 
 <!-- MANUAL ADDITIONS START -->
