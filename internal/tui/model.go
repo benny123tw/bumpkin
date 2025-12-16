@@ -610,7 +610,7 @@ func (m Model) renderVersionSelectView() string {
 
 	// Build version pane content
 	versionHeader := " Version "
-	versionContent := SubtitleStyle.Render("Select version bump:") + "\n" +
+	versionContent := SubtitleStyle.Render(" Select version bump:") + "\n" +
 		RenderVersionSelector(m.versionOptions, m.selectedOption)
 
 	// Apply border and width to version pane
