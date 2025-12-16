@@ -13,6 +13,7 @@ const (
 	conventionalCommitDescTruncate = 50 // Max length for conventional commit descriptions
 	nonConventionalCommitTruncate  = 60 // Max length for non-conventional commit messages
 	maxCommitsToDisplay            = 10 // Max commits to show before truncating
+	noMessagePlaceholder           = "(no message)"
 )
 
 // CommitDisplay represents a formatted commit for TUI display
@@ -149,4 +150,48 @@ func truncateString(s string, maxLen int) string {
 		return s
 	}
 	return s[:maxLen-3] + "..."
+}
+
+// RenderCommitListForViewport renders all commits without truncation for use in viewport
+func RenderCommitListForViewport(commits []*git.Commit) string {
+	if len(commits) == 0 {
+		return WarningStyle.Render("No new commits")
+	}
+
+	var sb strings.Builder
+
+	for _, commit := range commits {
+		subject := commit.Subject
+		if strings.TrimSpace(subject) == "" {
+			subject = noMessagePlaceholder
+		}
+		display := ParseCommitForDisplay(commit.Hash, subject)
+
+		// Hash
+		sb.WriteString(CommitHashStyle.Render(display.Hash))
+		sb.WriteString("  ")
+
+		if display.Type != "" {
+			// Conventional commit with type badge
+			style := GetCommitTypeStyle(display.Type, display.IsBreaking)
+			sb.WriteString(style.Render(display.Type))
+			sb.WriteString(" : ")
+			desc := display.Description
+			if strings.TrimSpace(desc) == "" {
+				desc = noMessagePlaceholder
+			}
+			sb.WriteString(truncateString(desc, conventionalCommitDescTruncate))
+		} else {
+			// Non-conventional commit
+			msg := display.RawMessage
+			if strings.TrimSpace(msg) == "" {
+				msg = noMessagePlaceholder
+			}
+			sb.WriteString(truncateString(msg, nonConventionalCommitTruncate))
+		}
+
+		sb.WriteString("\n")
+	}
+
+	return strings.TrimSuffix(sb.String(), "\n")
 }

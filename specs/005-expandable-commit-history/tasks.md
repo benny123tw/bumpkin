@@ -24,9 +24,9 @@
 
 **Purpose**: Add viewport dependency and foundational types
 
-- [ ] T001 Verify `charmbracelet/bubbles/viewport` is available (already in go.mod as bubbles v0.21.0)
-- [ ] T002 [P] Define `PaneType` enum (`PaneVersion`, `PaneCommits`) in `internal/tui/pane.go`
-- [ ] T003 [P] Add `FocusedBorderStyle` and `UnfocusedBorderStyle` in `internal/tui/styles.go`
+- [x] T001 Verify `charmbracelet/bubbles/viewport` is available (already in go.mod as bubbles v0.21.0)
+- [x] T002 [P] Define `PaneType` enum (`PaneVersion`, `PaneCommits`) in `internal/tui/pane.go`
+- [x] T003 [P] Add `FocusedBorderStyle` and `UnfocusedBorderStyle` in `internal/tui/styles.go`
 
 ---
 
@@ -38,15 +38,15 @@
 
 ### Tests for Foundational Phase
 
-- [ ] T004 Write test for `Model` with new pane fields in `internal/tui/model_test.go` - verify `focusedPane` defaults to `PaneVersion`, `commitsPane` initialized with zero dimensions
+- [x] T004 Write test for `Model` with new pane fields in `internal/tui/model_test.go` - verify `focusedPane` defaults to `PaneVersion`, `commitsPane` initialized with zero dimensions
 
 ### Implementation for Foundational Phase
 
-- [ ] T005 Add `commitsPane viewport.Model` field to `Model` struct in `internal/tui/model.go`
-- [ ] T006 Add `focusedPane PaneType` field to `Model` struct in `internal/tui/model.go`
-- [ ] T007 Add `showingDetail bool` and `selectedCommitIndex int` fields to `Model` struct in `internal/tui/model.go`
-- [ ] T008 Initialize new fields in `New()` function in `internal/tui/model.go` - `focusedPane = PaneVersion`, `commitsPane = viewport.New(0, 0)`
-- [ ] T009 Update `tea.WindowSizeMsg` handler to calculate pane heights (~30% commits, ~70% version) and resize `commitsPane` in `internal/tui/model.go`
+- [x] T005 Add `commitsPane viewport.Model` field to `Model` struct in `internal/tui/model.go`
+- [x] T006 Add `focusedPane PaneType` field to `Model` struct in `internal/tui/model.go`
+- [x] T007 Add `showingDetail bool` and `selectedCommitIndex int` fields to `Model` struct in `internal/tui/model.go`
+- [x] T008 Initialize new fields in `New()` function in `internal/tui/model.go` - `focusedPane = PaneVersion`, `commitsPane = viewport.New(0, 0)`
+- [x] T009 Update `tea.WindowSizeMsg` handler to calculate pane heights (~30% commits, ~70% version) and resize `commitsPane` in `internal/tui/model.go`
 
 **Checkpoint**: Model has all new fields, viewport initializes and resizes correctly
 
@@ -60,19 +60,19 @@
 
 ### Tests for User Story 1
 
-- [ ] T010 [US1] Write test: given `focusedPane == PaneVersion`, when Tab pressed, then `focusedPane == PaneCommits` in `internal/tui/model_test.go`
-- [ ] T011 [US1] Write test: given `focusedPane == PaneCommits`, when Tab pressed, then `focusedPane == PaneVersion` in `internal/tui/model_test.go`
-- [ ] T012 [US1] Write test: given `focusedPane == PaneCommits`, when Shift+Tab pressed, then `focusedPane == PaneVersion` in `internal/tui/model_test.go`
-- [ ] T013 [P] [US1] Write test for dual-pane rendering: verify both panes rendered with correct border styles based on focus in `internal/tui/view_test.go`
+- [x] T010 [US1] Write test: given `focusedPane == PaneVersion`, when Tab pressed, then `focusedPane == PaneCommits` in `internal/tui/model_test.go`
+- [x] T011 [US1] Write test: given `focusedPane == PaneCommits`, when Tab pressed, then `focusedPane == PaneVersion` in `internal/tui/model_test.go`
+- [x] T012 [US1] Write test: given `focusedPane == PaneCommits`, when Shift+Tab pressed, then `focusedPane == PaneVersion` in `internal/tui/model_test.go`
+- [x] T013 [P] [US1] Write test for dual-pane rendering: verify both panes rendered with correct border styles based on focus in `internal/tui/view_test.go`
 
 ### Implementation for User Story 1
 
-- [ ] T014 [US1] Handle Tab and Shift+Tab key events to toggle `focusedPane` in `handleKeyPress()` in `internal/tui/model.go`
-- [ ] T015 [US1] Add `RenderCommitListForViewport(commits []*git.Commit) string` function (no truncation) in `internal/tui/commits.go`
-- [ ] T016 [US1] Populate `commitsPane.SetContent()` with rendered commits in `RepoLoadedMsg` handler in `internal/tui/model.go`
-- [ ] T017 [US1] Refactor `renderVersionSelectView()` to render dual-pane layout using `lipgloss.JoinVertical()` in `internal/tui/model.go`
-- [ ] T018 [US1] Apply `FocusedBorderStyle` or `UnfocusedBorderStyle` to each pane based on `focusedPane` value in `internal/tui/model.go`
-- [ ] T019 [US1] Update help text at bottom to show "[Tab] switch pane" in `renderHelp()` in `internal/tui/model.go`
+- [x] T014 [US1] Handle Tab and Shift+Tab key events to toggle `focusedPane` in `handleKeyPress()` in `internal/tui/model.go`
+- [x] T015 [US1] Add `RenderCommitListForViewport(commits []*git.Commit) string` function (no truncation) in `internal/tui/commits.go`
+- [x] T016 [US1] Populate `commitsPane.SetContent()` with rendered commits in `RepoLoadedMsg` handler in `internal/tui/model.go`
+- [x] T017 [US1] Refactor `renderVersionSelectView()` to render dual-pane layout using `lipgloss.JoinVertical()` in `internal/tui/model.go`
+- [x] T018 [US1] Apply `FocusedBorderStyle` or `UnfocusedBorderStyle` to each pane based on `focusedPane` value in `internal/tui/model.go`
+- [x] T019 [US1] Update help text at bottom to show "[Tab] switch pane" in `renderHelp()` in `internal/tui/model.go`
 
 **Checkpoint**: User Story 1 complete - Tab switches focus, both panes visible with focus indicator
 
@@ -86,17 +86,17 @@
 
 ### Tests for User Story 2
 
-- [ ] T020 [US2] Write test: given commits pane focused, when down arrow pressed, then viewport scrolls down in `internal/tui/model_test.go`
-- [ ] T021 [US2] Write test: given commits pane focused, when up arrow pressed, then viewport scrolls up in `internal/tui/model_test.go`
-- [ ] T022 [US2] Write test: given version pane focused, when down arrow pressed, then version selector moves (not viewport) in `internal/tui/model_test.go`
-- [ ] T023 [P] [US2] Write test for scroll position indicator rendering (e.g., "[5/25]") in `internal/tui/commits_test.go`
+- [x] T020 [US2] Write test: given commits pane focused, when down arrow pressed, then viewport scrolls down in `internal/tui/model_test.go`
+- [x] T021 [US2] Write test: given commits pane focused, when up arrow pressed, then viewport scrolls up in `internal/tui/model_test.go`
+- [x] T022 [US2] Write test: given version pane focused, when down arrow pressed, then version selector moves (not viewport) in `internal/tui/model_test.go`
+- [x] T023 [P] [US2] Write test for scroll position indicator rendering (e.g., "[5/25]") in `internal/tui/commits_test.go`
 
 ### Implementation for User Story 2
 
-- [ ] T024 [US2] Route arrow key events to `commitsPane.Update()` when `focusedPane == PaneCommits` in `handleKeyPress()` in `internal/tui/model.go`
-- [ ] T025 [US2] Keep existing arrow key handling for version selection when `focusedPane == PaneVersion` in `internal/tui/model.go`
-- [ ] T026 [US2] Add scroll position indicator to commits pane header (e.g., "Commits (5/25)") using `commitsPane.YOffset` and total commit count in `internal/tui/model.go`
-- [ ] T027 [US2] Ensure j/k keys also work for scrolling (match existing vim-style navigation) in `internal/tui/model.go`
+- [x] T024 [US2] Route arrow key events to `commitsPane.Update()` when `focusedPane == PaneCommits` in `handleKeyPress()` in `internal/tui/model.go`
+- [x] T025 [US2] Keep existing arrow key handling for version selection when `focusedPane == PaneVersion` in `internal/tui/model.go`
+- [x] T026 [US2] Add scroll position indicator to commits pane header (e.g., "Commits (5/25)") using `commitsPane.YOffset` and total commit count in `internal/tui/model.go`
+- [x] T027 [US2] Ensure j/k keys also work for scrolling (match existing vim-style navigation) in `internal/tui/model.go`
 
 **Checkpoint**: User Story 2 complete - commits pane scrolls, position indicator updates
 
@@ -110,19 +110,19 @@
 
 ### Tests for User Story 3
 
-- [ ] T028 [US3] Write test: given commits pane focused, when Enter pressed, then `showingDetail == true` in `internal/tui/model_test.go`
-- [ ] T029 [US3] Write test: given overlay showing, when Escape pressed, then `showingDetail == false` in `internal/tui/model_test.go`
-- [ ] T030 [US3] Write test: given overlay showing, when Enter pressed, then `showingDetail == false` in `internal/tui/model_test.go`
-- [ ] T031 [P] [US3] Write test for overlay rendering with full commit details in `internal/tui/overlay_test.go`
+- [x] T028 [US3] Write test: given commits pane focused, when Enter pressed, then `showingDetail == true` in `internal/tui/model_test.go`
+- [x] T029 [US3] Write test: given overlay showing, when Escape pressed, then `showingDetail == false` in `internal/tui/model_test.go`
+- [x] T030 [US3] Write test: given overlay showing, when Enter pressed, then `showingDetail == false` in `internal/tui/model_test.go`
+- [x] T031 [P] [US3] Write test for overlay rendering with full commit details in `internal/tui/overlay_test.go`
 
 ### Implementation for User Story 3
 
-- [ ] T032 [P] [US3] Create `internal/tui/overlay.go` with `RenderCommitDetailOverlay(commit *git.Commit, width, height int) string` function
-- [ ] T033 [US3] Handle Enter key in commits pane to set `showingDetail = true` and `selectedCommitIndex` in `internal/tui/model.go`
-- [ ] T034 [US3] Handle Escape and Enter keys to dismiss overlay (`showingDetail = false`) in `internal/tui/model.go`
-- [ ] T035 [US3] Block pane switching (Tab) when `showingDetail == true` in `internal/tui/model.go`
-- [ ] T036 [US3] Render overlay on top of pane layout when `showingDetail == true` in `View()` in `internal/tui/model.go`
-- [ ] T037 [US3] Add `OverlayStyle` with centered box styling in `internal/tui/styles.go`
+- [x] T032 [P] [US3] Create `internal/tui/overlay.go` with `RenderCommitDetailOverlay(commit *git.Commit, width, height int) string` function
+- [x] T033 [US3] Handle Enter key in commits pane to set `showingDetail = true` and `selectedCommitIndex` in `internal/tui/model.go`
+- [x] T034 [US3] Handle Escape and Enter keys to dismiss overlay (`showingDetail = false`) in `internal/tui/model.go`
+- [x] T035 [US3] Block pane switching (Tab) when `showingDetail == true` in `internal/tui/model.go`
+- [x] T036 [US3] Render overlay on top of pane layout when `showingDetail == true` in `View()` in `internal/tui/model.go`
+- [x] T037 [US3] Add `OverlayStyle` with centered box styling in `internal/tui/styles.go`
 
 **Checkpoint**: User Story 3 complete - Enter shows overlay, Escape/Enter dismisses it
 
@@ -136,15 +136,15 @@
 
 ### Tests for User Story 4
 
-- [ ] T038 [US4] Write test: given version pane focused, when Enter pressed on version, then proceeds to confirmation in `internal/tui/model_test.go`
-- [ ] T039 [US4] Write test: given confirmation showing, commits pane scroll position preserved when returning to version select in `internal/tui/model_test.go`
-- [ ] T040 [P] [US4] Write test: verify commits pane remains visible (dimmed) when version pane is focused in `internal/tui/view_test.go`
+- [x] T038 [US4] Write test: given version pane focused, when Enter pressed on version, then proceeds to confirmation in `internal/tui/model_test.go`
+- [x] T039 [US4] Write test: given confirmation showing, commits pane scroll position preserved when returning to version select in `internal/tui/model_test.go`
+- [x] T040 [P] [US4] Write test: verify commits pane remains visible (dimmed) when version pane is focused in `internal/tui/view_test.go`
 
 ### Implementation for User Story 4
 
-- [ ] T041 [US4] Verify existing Enter handling for version selection still works in `handleVersionSelectKeys()` in `internal/tui/model.go`
-- [ ] T042 [US4] Preserve `commitsPane.YOffset` (scroll position) when switching panes in `internal/tui/model.go`
-- [ ] T043 [US4] Ensure confirmation view returns to version select state correctly (no regressions) in `internal/tui/model.go`
+- [x] T041 [US4] Verify existing Enter handling for version selection still works in `handleVersionSelectKeys()` in `internal/tui/model.go`
+- [x] T042 [US4] Preserve `commitsPane.YOffset` (scroll position) when switching panes in `internal/tui/model.go`
+- [x] T043 [US4] Ensure confirmation view returns to version select state correctly (no regressions) in `internal/tui/model.go`
 
 **Checkpoint**: User Story 4 complete - full workflow works: view commits → select version → confirm
 
@@ -154,13 +154,13 @@
 
 **Purpose**: Edge cases, small terminal handling, and final cleanup
 
-- [ ] T044 [P] Handle edge case: 0 commits - show "No new commits" message in commits pane in `internal/tui/model.go`
-- [ ] T045 [P] Handle edge case: fewer than 5 commits - hide scroll indicator in `internal/tui/model.go`
-- [ ] T046 [P] Handle edge case: empty commit message - show "(no message)" placeholder in `internal/tui/commits.go`
-- [ ] T047 Implement small terminal fallback: if `height < 16`, show single pane with Tab switching in `internal/tui/model.go`
-- [ ] T048 Run `golangci-lint run` and fix any issues
-- [ ] T049 Run `go test ./internal/tui/...` and verify all tests pass
-- [ ] T050 Manual testing: run `go run ./cmd/bumpkin` in a repo with various commit counts
+- [x] T044 [P] Handle edge case: 0 commits - show "No new commits" message in commits pane in `internal/tui/model.go`
+- [x] T045 [P] Handle edge case: fewer than 5 commits - hide scroll indicator in `internal/tui/model.go`
+- [x] T046 [P] Handle edge case: empty commit message - show "(no message)" placeholder in `internal/tui/commits.go`
+- [x] T047 Implement small terminal fallback: if `height < 16`, show single pane with Tab switching in `internal/tui/model.go`
+- [x] T048 Run `golangci-lint run` and fix any issues
+- [x] T049 Run `go test ./internal/tui/...` and verify all tests pass
+- [x] T050 Manual testing: run `go run ./cmd/bumpkin` in a repo with various commit counts
 
 ---
 
