@@ -160,6 +160,31 @@ func TestFlags_MutualExclusivity(t *testing.T) {
 	}
 }
 
+// Test countTrueFlags helper function
+func TestCountTrueFlags(t *testing.T) {
+	tests := []struct {
+		name     string
+		flags    []bool
+		expected int
+	}{
+		{"no flags", []bool{}, 0},
+		{"all false", []bool{false, false, false}, 0},
+		{"one true", []bool{true, false, false}, 1},
+		{"two true", []bool{true, true, false}, 2},
+		{"all true", []bool{true, true, true}, 3},
+		{"single true", []bool{true}, 1},
+		{"single false", []bool{false}, 0},
+		{"many flags mixed", []bool{true, false, true, false, true, false, true}, 4},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := countTrueFlags(tt.flags...)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 // Test default values
 func TestFlags_Defaults(t *testing.T) {
 	cmd := NewRootCmd()
