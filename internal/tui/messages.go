@@ -11,7 +11,6 @@ type State int
 
 const (
 	StateLoading State = iota
-	StateCommitList
 	StateVersionSelect
 	StateCustomInput
 	StateConfirm
