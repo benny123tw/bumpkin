@@ -52,17 +52,20 @@ func TestPartialSuccessError_Unwrap(t *testing.T) {
 		Result: &Result{TagCreated: true},
 	}
 
-	// Test Unwrap
+	// Test Unwrap returns the wrapped error
 	assert.Equal(t, originalErr, partialErr.Unwrap())
 
-	// Test errors.Is works with wrapped error
+	// Test errors.Is works through the error chain
+	assert.ErrorIs(t, partialErr, originalErr)
+
+	// Test errors.Is works with nested wrapped error
 	wrappedErr := fmt.Errorf("wrapped: %w", originalErr)
 	partialErr2 := &PartialSuccessError{
 		Phase:  PhasePostTag,
 		Err:    wrappedErr,
 		Result: &Result{TagCreated: true},
 	}
-	assert.True(t, errors.Is(partialErr2, originalErr))
+	assert.ErrorIs(t, partialErr2, originalErr)
 }
 
 func TestPartialSuccessError_ErrorsAs(t *testing.T) {
@@ -79,7 +82,7 @@ func TestPartialSuccessError_ErrorsAs(t *testing.T) {
 
 	// Test errors.As works
 	var target *PartialSuccessError
-	assert.True(t, errors.As(partialErr, &target))
+	assert.ErrorAs(t, partialErr, &target)
 	assert.Equal(t, PhasePostTag, target.Phase)
 	assert.Equal(t, "v1.0.0", target.Result.TagName)
 	assert.True(t, target.Result.TagCreated)
@@ -87,7 +90,7 @@ func TestPartialSuccessError_ErrorsAs(t *testing.T) {
 	// Test errors.As with wrapped PartialSuccessError
 	wrappedPartial := fmt.Errorf("operation failed: %w", partialErr)
 	var target2 *PartialSuccessError
-	assert.True(t, errors.As(wrappedPartial, &target2))
+	assert.ErrorAs(t, wrappedPartial, &target2)
 	assert.Equal(t, PhasePostTag, target2.Phase)
 }
 
