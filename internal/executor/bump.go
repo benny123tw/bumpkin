@@ -152,9 +152,13 @@ func Execute(ctx context.Context, req Request) (*Result, error) {
 		postHooks := hooks.CreateHooks(req.PostTagHooks, hooks.PostTag)
 		results, err := hooks.RunHooks(ctx, postHooks, hookCtx)
 		if err != nil {
-			// Post-tag hooks failing is a warning, not fatal
-			// Tag was already created
-			return result, fmt.Errorf("post-tag hook failed (tag already created): %w", err)
+			// Post-tag hooks failing returns a PartialSuccessError
+			// because the tag was already created successfully
+			return result, &PartialSuccessError{
+				Phase:  PhasePostTag,
+				Err:    err,
+				Result: result,
+			}
 		}
 		result.HooksExecuted += len(results)
 	}
