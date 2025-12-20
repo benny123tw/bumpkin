@@ -181,36 +181,31 @@ func applyConfigDefaults(cmd *cobra.Command, cfg *config.Config) {
 	}
 }
 
+// countTrueFlags counts the number of true values among the provided boolean flags.
+// This is useful for validating mutually exclusive flag groups.
+func countTrueFlags(flags ...bool) int {
+	count := 0
+	for _, f := range flags {
+		if f {
+			count++
+		}
+	}
+	return count
+}
+
 func runNonInteractive(cmd *cobra.Command, repo *git.Repository, cfg *config.Config) error {
 	// Validate mutually exclusive flags
-	bumpCount := 0
-	if flagPatch {
-		bumpCount++
-	}
-	if flagMinor {
-		bumpCount++
-	}
-	if flagMajor {
-		bumpCount++
-	}
-	if flagSetVersion != "" {
-		bumpCount++
-	}
-	if flagConventional {
-		bumpCount++
-	}
-	if flagAlpha {
-		bumpCount++
-	}
-	if flagBeta {
-		bumpCount++
-	}
-	if flagRC {
-		bumpCount++
-	}
-	if flagRelease {
-		bumpCount++
-	}
+	bumpCount := countTrueFlags(
+		flagPatch,
+		flagMinor,
+		flagMajor,
+		flagSetVersion != "",
+		flagConventional,
+		flagAlpha,
+		flagBeta,
+		flagRC,
+		flagRelease,
+	)
 
 	if bumpCount > 1 {
 		return handleErrorWithCode(
