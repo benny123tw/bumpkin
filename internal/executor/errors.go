@@ -33,7 +33,8 @@ type PartialSuccessError struct {
 	Err error
 
 	// Result contains the partial result up to the point of failure.
-	// For post-tag failures, TagCreated will be true.
+	// Result is always non-nil when this error is returned.
+	// For post-tag failures, Result.TagCreated will be true.
 	Result *Result
 }
 
