@@ -271,7 +271,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.customInput.Reset()
 		case StateConfirm:
 			m.state = StateVersionSelect
-		case StateLoading, StateCommitList, StateExecuting, StateDone, StateError:
+		case StateLoading, StateExecuting, StateDone, StateError:
 			// No action for these states
 		}
 		return m, nil
@@ -289,8 +289,8 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	switch m.state {
-	case StateLoading, StateCommitList:
-		// No key handling during loading (StateCommitList kept for backwards compatibility)
+	case StateLoading:
+		// No key handling during loading
 		return m, nil
 	case StateVersionSelect:
 		return m.handleVersionSelectKeys(msg)
@@ -520,8 +520,7 @@ func (m Model) View() string {
 		sb.WriteString(m.spinner.View())
 		sb.WriteString(" Loading repository...")
 
-	case StateCommitList, StateVersionSelect:
-		// StateCommitList is deprecated - both render the same view now
+	case StateVersionSelect:
 		sb.WriteString(m.renderVersionSelectView())
 
 		// Render overlay on top if showing detail
@@ -675,9 +674,6 @@ func (m Model) renderHelp() string {
 	switch m.state {
 	case StateLoading:
 		help = "loading..."
-	case StateCommitList:
-		// Deprecated - kept for backwards compatibility
-		help = "enter: select version • q: quit"
 	case StateVersionSelect:
 		help = "↑/↓/j/k: navigate • h/l/tab: switch pane • gg/G: top/bottom • enter: select • q: quit"
 	case StateCustomInput:
