@@ -13,6 +13,7 @@ import (
 	"github.com/benny123tw/bumpkin/internal/conventional"
 	"github.com/benny123tw/bumpkin/internal/executor"
 	"github.com/benny123tw/bumpkin/internal/git"
+	"github.com/benny123tw/bumpkin/internal/hooks"
 	"github.com/benny123tw/bumpkin/internal/version"
 )
 
@@ -75,6 +76,14 @@ type Model struct {
 	showingDetail       bool           // Whether commit detail overlay is shown
 	selectedCommitIndex int            // Index of commit selected for detail view
 	waitingForG         bool           // Whether we're waiting for second 'g' in 'gg' sequence
+
+	// Hook output streaming
+	hookPane       *HookPane             // Scrollable output pane for hooks
+	hookLineChan   chan hooks.OutputLine // Channel for receiving output lines
+	hookDoneChan   chan hooks.HookResult // Channel for hook completion
+	currentHooks   []hooks.Hook          // Current hooks being executed
+	currentHookIdx int                   // Index of current hook in sequence
+	hookPhase      hooks.HookType        // Current hook phase (pre-tag, post-tag, etc.)
 
 	// Window size
 	width  int
@@ -183,6 +192,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.commitsPane.Height = commitsPaneHeight - 2
 		}
 
+		// Resize hook pane if it exists
+		if m.hookPane != nil {
+			paneWidth := m.width - 4
+			paneHeight := m.height - 6
+			if paneWidth < 40 {
+				paneWidth = 40
+			}
+			if paneHeight < 10 {
+				paneHeight = 10
+			}
+			m.hookPane.SetSize(paneWidth, paneHeight)
+		}
+
 		return m, nil
 
 	case spinner.TickMsg:
@@ -234,6 +256,67 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.err = msg.Err
 		m.state = StateError
 		return m, nil
+
+	case HookLineMsg:
+		// Add line to hook pane
+		if m.hookPane != nil {
+			m.hookPane.AddLine(msg.Line)
+		}
+		// Continue listening for more lines
+		return m, waitForHookLine(m.hookLineChan)
+
+	case HookStartMsg:
+		// Update hook pane with current hook info
+		if m.hookPane != nil {
+			m.hookPane.SetCurrentHook(msg.Hook, msg.Index, msg.Total)
+		}
+		return m, nil
+
+	case HookCompleteMsg:
+		if !msg.Success {
+			// For post-push hooks, we use fail-open (warnings, not errors)
+			if m.hookPhase == hooks.PostPush {
+				// Add warning and continue
+				if m.result != nil {
+					m.result.PostPushWarnings = append(m.result.PostPushWarnings,
+						fmt.Sprintf("hook '%s' failed: %v", msg.Hook.Command, msg.Error))
+				}
+			} else {
+				m.err = msg.Error
+				m.state = StateError
+				return m, nil
+			}
+		}
+		// Move to next hook or complete
+		m.currentHookIdx++
+		if m.currentHookIdx < len(m.currentHooks) {
+			// Start next hook
+			return m, m.startNextHook()
+		}
+		// All hooks complete, proceed with execution
+		return m, m.continueExecution()
+
+	case TagCreatedMsg:
+		// Store result from message
+		m.result = &executor.Result{
+			TagName:    msg.TagName,
+			CommitHash: msg.CommitHash,
+			Pushed:     false,
+		}
+		// Tag created, run post-tag hooks
+		return m, m.startPostTagHooks()
+
+	case PushCompleteMsg:
+		// Mark as pushed
+		if m.result != nil {
+			m.result.Pushed = true
+		}
+		// Push complete, run post-push hooks
+		return m, m.startPostPushHooks()
+
+	case ExecuteStartMsg:
+		// Start the execution flow with pre-tag hooks
+		return m, m.startPreTagHooks()
 	}
 
 	// Handle text input updates
@@ -252,9 +335,11 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.state == StateDone || m.state == StateError {
 			return m, tea.Quit
 		}
-		if m.state != StateExecuting {
-			return m, tea.Quit
+		// Don't allow quit during execution states
+		if m.state == StateExecuting || m.state == StateExecutingHooks {
+			return m, nil
 		}
+		return m, tea.Quit
 
 	case "esc":
 		// Dismiss overlay if showing
@@ -271,7 +356,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.customInput.Reset()
 		case StateConfirm:
 			m.state = StateVersionSelect
-		case StateLoading, StateExecuting, StateDone, StateError:
+		case StateLoading, StateExecuting, StateExecutingHooks, StateDone, StateError:
 			// No action for these states
 		}
 		return m, nil
@@ -301,6 +386,9 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case StateExecuting:
 		// No key handling during execution
 		return m, nil
+	case StateExecutingHooks:
+		// Allow scrolling in hook output pane
+		return m.handleHookExecutionKeys(msg)
 	case StateDone, StateError:
 		return m, tea.Quit
 	}
@@ -454,6 +542,19 @@ func (m Model) handleCustomInputKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+func (m Model) handleHookExecutionKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	// Delegate scroll keys to hookPane
+	if m.hookPane != nil {
+		switch msg.String() {
+		case keyUp, keyK, keyDown, keyJ, "g", "G", "ctrl+u", "ctrl+d":
+			var cmd tea.Cmd
+			m.hookPane, cmd = m.hookPane.Update(msg)
+			return m, cmd
+		}
+	}
+	return m, nil
+}
+
 func (m Model) handleConfirmKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case keyUp, keyK, keyDown, keyJ, "tab":
@@ -476,29 +577,8 @@ func (m Model) handleConfirmKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) executeVersion() tea.Msg {
-	// Parse the new version (strip prefix)
-	newVerStr := strings.TrimPrefix(m.newVersion, m.config.Prefix)
-
-	req := executor.Request{
-		Repository:    m.config.Repository,
-		BumpType:      m.selectedBumpType,
-		CustomVersion: newVerStr,
-		Prefix:        m.config.Prefix,
-		Remote:        m.config.Remote,
-		DryRun:        m.config.DryRun,
-		NoPush:        m.config.NoPush || !m.hasRemote,
-		NoHooks:       m.config.NoHooks,
-		PreTagHooks:   m.config.PreTagHooks,
-		PostTagHooks:  m.config.PostTagHooks,
-		PostPushHooks: m.config.PostPushHooks,
-	}
-
-	result, err := executor.Execute(context.Background(), req)
-	if err != nil {
-		return ErrorMsg{Err: err}
-	}
-
-	return ExecuteResultMsg{Result: result}
+	// Start pre-tag hooks (which will chain to tagging, post-tag, push, post-push)
+	return ExecuteStartMsg{}
 }
 
 // View renders the UI
@@ -539,6 +619,9 @@ func (m Model) View() string {
 	case StateExecuting:
 		sb.WriteString(m.spinner.View())
 		sb.WriteString(" Creating tag...")
+
+	case StateExecutingHooks:
+		sb.WriteString(m.renderHookExecutionView())
 
 	case StateDone:
 		sb.WriteString(m.renderDoneView())
@@ -652,6 +735,33 @@ func (m Model) renderConfirmView() string {
 	)
 }
 
+func (m Model) renderHookExecutionView() string {
+	var sb strings.Builder
+
+	// Show current phase
+	phaseLabel := "Running hooks"
+	switch m.hookPhase {
+	case hooks.PreTag:
+		phaseLabel = "Running pre-tag hooks"
+	case hooks.PostTag:
+		phaseLabel = "Running post-tag hooks"
+	case hooks.PostPush:
+		phaseLabel = "Running post-push hooks"
+	}
+
+	sb.WriteString(m.spinner.View())
+	sb.WriteString(" ")
+	sb.WriteString(SubtitleStyle.Render(phaseLabel))
+	sb.WriteString("\n\n")
+
+	// Render hook output pane
+	if m.hookPane != nil {
+		sb.WriteString(m.hookPane.View())
+	}
+
+	return sb.String()
+}
+
 func (m Model) renderDoneView() string {
 	if m.result == nil {
 		return ""
@@ -682,12 +792,226 @@ func (m Model) renderHelp() string {
 		help = "↑/↓: select • enter: confirm • y/n: yes/no • esc: back"
 	case StateExecuting:
 		help = "please wait..."
+	case StateExecutingHooks:
+		help = "↑/↓/j/k: scroll output • running hooks..."
 	case StateDone, StateError:
 		// Help text already included in RenderSuccess/RenderError
 		return ""
 	}
 
 	return HelpStyle.Render(help)
+}
+
+// waitForHookLine returns a tea.Cmd that waits for output lines from a hook
+func waitForHookLine(lineChan chan hooks.OutputLine) tea.Cmd {
+	return func() tea.Msg {
+		line, ok := <-lineChan
+		if !ok {
+			return nil // Channel closed
+		}
+		return HookLineMsg{Line: line}
+	}
+}
+
+// waitForHookDone returns a tea.Cmd that waits for hook completion
+func waitForHookDone(doneChan chan hooks.HookResult) tea.Cmd {
+	return func() tea.Msg {
+		result, ok := <-doneChan
+		if !ok {
+			return nil // Channel closed
+		}
+		return HookCompleteMsg{
+			Hook:     result.Hook,
+			Success:  result.Success,
+			Error:    result.Error,
+			Duration: result.Duration,
+		}
+	}
+}
+
+// startNextHook starts the next hook in the sequence and returns the tea.Cmd
+func (m *Model) startNextHook() tea.Cmd {
+	if m.currentHookIdx >= len(m.currentHooks) {
+		return nil
+	}
+
+	hook := m.currentHooks[m.currentHookIdx]
+
+	// Create hook context
+	hookCtx := &hooks.HookContext{
+		TagName:         m.newVersion,
+		PreviousVersion: m.currentVersion.String(),
+		Version:         strings.TrimPrefix(m.newVersion, m.config.Prefix),
+		Prefix:          m.config.Prefix,
+		Remote:          m.config.Remote,
+		DryRun:          m.config.DryRun,
+	}
+
+	// Start streaming hook execution
+	lineChan, doneChan := hooks.RunHookStreaming(context.Background(), hook, hookCtx)
+	m.hookLineChan = lineChan
+	m.hookDoneChan = doneChan
+
+	// Update hookPane with current hook info
+	if m.hookPane != nil {
+		m.hookPane.SetCurrentHook(hook, m.currentHookIdx, len(m.currentHooks))
+	}
+
+	// Return commands to listen for output and completion, plus spinner
+	return tea.Batch(
+		m.spinner.Tick,
+		waitForHookLine(lineChan),
+		waitForHookDone(doneChan),
+	)
+}
+
+// continueExecution proceeds with the execution after hooks complete
+func (m *Model) continueExecution() tea.Cmd {
+	// Determine what to do next based on hook phase
+	switch m.hookPhase {
+	case hooks.PreTag:
+		// Pre-tag hooks done, now execute the actual tagging
+		return m.doTagging
+	case hooks.PostTag:
+		// Post-tag hooks done, check if we need to push
+		if m.config.NoPush || !m.hasRemote {
+			m.state = StateDone
+			return nil
+		}
+		// Push and then run post-push hooks
+		return m.doPushAndPostPush
+	case hooks.PostPush:
+		// All done
+		m.state = StateDone
+		return nil
+	default:
+		m.state = StateDone
+		return nil
+	}
+}
+
+// initHookPane initializes the hook output pane with current dimensions
+func (m *Model) initHookPane() {
+	// Calculate pane dimensions - use most of the screen
+	paneWidth := m.width - 4
+	paneHeight := m.height - 6 // Leave room for header and footer
+	if paneWidth < 40 {
+		paneWidth = 40
+	}
+	if paneHeight < 10 {
+		paneHeight = 10
+	}
+	m.hookPane = NewHookPane(paneWidth, paneHeight)
+}
+
+// startPreTagHooks initializes and starts pre-tag hook execution
+func (m *Model) startPreTagHooks() tea.Cmd {
+	if m.config.NoHooks || len(m.config.PreTagHooks) == 0 {
+		// No pre-tag hooks, proceed directly to tagging
+		return m.doTagging
+	}
+
+	// Initialize hook pane
+	m.initHookPane()
+
+	// Set up pre-tag hooks
+	m.currentHooks = hooks.CreateHooks(m.config.PreTagHooks, hooks.PreTag)
+	m.currentHookIdx = 0
+	m.hookPhase = hooks.PreTag
+	m.state = StateExecutingHooks
+
+	return m.startNextHook()
+}
+
+// startPostTagHooks initializes and starts post-tag hook execution
+func (m *Model) startPostTagHooks() tea.Cmd {
+	if m.config.NoHooks || len(m.config.PostTagHooks) == 0 {
+		// No post-tag hooks, check if we need to push
+		if m.config.NoPush || !m.hasRemote {
+			m.state = StateDone
+			return nil
+		}
+		return m.doPushAndPostPush
+	}
+
+	// Initialize hook pane if not already done
+	if m.hookPane == nil {
+		m.initHookPane()
+	}
+
+	// Set up post-tag hooks
+	m.currentHooks = hooks.CreateHooks(m.config.PostTagHooks, hooks.PostTag)
+	m.currentHookIdx = 0
+	m.hookPhase = hooks.PostTag
+	m.state = StateExecutingHooks
+
+	return m.startNextHook()
+}
+
+// startPostPushHooks initializes and starts post-push hook execution
+func (m *Model) startPostPushHooks() tea.Cmd {
+	if m.config.NoHooks || len(m.config.PostPushHooks) == 0 {
+		m.state = StateDone
+		return nil
+	}
+
+	// Initialize hook pane if not already done
+	if m.hookPane == nil {
+		m.initHookPane()
+	}
+
+	// Set up post-push hooks
+	m.currentHooks = hooks.CreateHooks(m.config.PostPushHooks, hooks.PostPush)
+	m.currentHookIdx = 0
+	m.hookPhase = hooks.PostPush
+	m.state = StateExecutingHooks
+
+	return m.startNextHook()
+}
+
+// doTagging creates the git tag
+func (m Model) doTagging() tea.Msg {
+	newVerStr := strings.TrimPrefix(m.newVersion, m.config.Prefix)
+
+	// Get HEAD commit hash first
+	headHash, err := m.config.Repository.GetHEAD()
+	if err != nil {
+		return ErrorMsg{Err: fmt.Errorf("failed to get HEAD: %w", err)}
+	}
+
+	if m.config.DryRun {
+		// Dry run - just pretend we created the tag
+		return TagCreatedMsg{
+			TagName:    m.newVersion,
+			CommitHash: headHash.String(),
+		}
+	}
+
+	// Create the tag
+	err = m.config.Repository.CreateTag(m.newVersion, fmt.Sprintf("Release %s", newVerStr))
+	if err != nil {
+		return ErrorMsg{Err: fmt.Errorf("failed to create tag: %w", err)}
+	}
+
+	return TagCreatedMsg{
+		TagName:    m.newVersion,
+		CommitHash: headHash.String(),
+	}
+}
+
+// doPushAndPostPush pushes the tag and starts post-push hooks
+func (m Model) doPushAndPostPush() tea.Msg {
+	if m.config.DryRun {
+		return PushCompleteMsg{}
+	}
+
+	// Push the tag
+	err := m.config.Repository.PushTag(m.newVersion, m.config.Remote)
+	if err != nil {
+		return ErrorMsg{Err: fmt.Errorf("failed to push tag: %w", err)}
+	}
+
+	return PushCompleteMsg{}
 }
 
 // Run starts the TUI

@@ -24,10 +24,10 @@
 
 **Purpose**: Project initialization and type definitions
 
-- [ ] T001 Add StreamType enum (Stdout, Stderr) to internal/hooks/types.go
-- [ ] T002 Add OutputLine struct (Text, Stream, Timestamp) to internal/hooks/types.go
-- [ ] T003 [P] Add HookLineMsg, HookStartMsg, HookCompleteMsg, HookPhaseCompleteMsg message types to internal/tui/messages.go
-- [ ] T004 [P] Add stdout/stderr display styles (StdoutStyle, StderrStyle, HookHeaderStyle) to internal/tui/styles.go
+- [x] T001 Add StreamType enum (Stdout, Stderr) to internal/hooks/types.go
+- [x] T002 Add OutputLine struct (Text, Stream, Timestamp) to internal/hooks/types.go
+- [x] T003 [P] Add HookLineMsg, HookStartMsg, HookCompleteMsg, HookPhaseCompleteMsg message types to internal/tui/messages.go
+- [x] T004 [P] Add stdout/stderr display styles (StdoutStyle, StderrStyle, HookHeaderStyle) to internal/tui/styles.go
 
 ---
 
@@ -39,20 +39,20 @@
 
 ### Tests for Foundational Components
 
-- [ ] T005 [P] Write test for OutputBuffer.AddLine() in internal/hooks/buffer_test.go - test adding lines and retrieving them
-- [ ] T006 [P] Write test for OutputBuffer.LineCount() in internal/hooks/buffer_test.go - test accurate count tracking
-- [ ] T007 [P] Write test for OutputBuffer.MaxLines eviction in internal/hooks/buffer_test.go - test oldest lines are removed when limit exceeded
-- [ ] T008 [P] Write test for OutputBuffer.Render() in internal/hooks/buffer_test.go - test formatted output string generation
-- [ ] T009 [P] Write test for OutputBuffer thread safety in internal/hooks/buffer_test.go - test concurrent AddLine calls
+- [x] T005 [P] Write test for OutputBuffer.AddLine() in internal/hooks/buffer_test.go - test adding lines and retrieving them
+- [x] T006 [P] Write test for OutputBuffer.LineCount() in internal/hooks/buffer_test.go - test accurate count tracking
+- [x] T007 [P] Write test for OutputBuffer.MaxLines eviction in internal/hooks/buffer_test.go - test oldest lines are removed when limit exceeded
+- [x] T008 [P] Write test for OutputBuffer.Render() in internal/hooks/buffer_test.go - test formatted output string generation
+- [x] T009 [P] Write test for OutputBuffer thread safety in internal/hooks/buffer_test.go - test concurrent AddLine calls
 
 ### Implementation for Foundational Components
 
-- [ ] T010 Implement OutputBuffer struct with mutex in internal/hooks/buffer.go
-- [ ] T011 Implement OutputBuffer.AddLine() method in internal/hooks/buffer.go
-- [ ] T012 Implement OutputBuffer.LineCount() method in internal/hooks/buffer.go
-- [ ] T013 Implement OutputBuffer.Render() method with styled stdout/stderr in internal/hooks/buffer.go
-- [ ] T014 Implement OutputBuffer max lines eviction logic in internal/hooks/buffer.go
-- [ ] T015 Run `go test ./internal/hooks/... -run Buffer` to verify all buffer tests pass
+- [x] T010 Implement OutputBuffer struct with mutex in internal/hooks/buffer.go
+- [x] T011 Implement OutputBuffer.AddLine() method in internal/hooks/buffer.go
+- [x] T012 Implement OutputBuffer.LineCount() method in internal/hooks/buffer.go
+- [x] T013 Implement OutputBuffer.Render() method with styled stdout/stderr in internal/hooks/buffer.go
+- [x] T014 Implement OutputBuffer max lines eviction logic in internal/hooks/buffer.go
+- [x] T015 Run `go test ./internal/hooks/... -run Buffer` to verify all buffer tests pass
 
 **Checkpoint**: OutputBuffer foundation ready - user story implementation can now begin
 
@@ -68,38 +68,38 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T016 [P] [US1] Write test for RunHookStreaming() basic output capture in internal/hooks/runner_test.go
-- [ ] T017 [P] [US1] Write test for RunHookStreaming() stdout/stderr separation in internal/hooks/runner_test.go
-- [ ] T018 [P] [US1] Write test for RunHookStreaming() channel closure on completion in internal/hooks/runner_test.go
-- [ ] T019 [P] [US1] Write test for HookPane.AddLine() content update in internal/tui/hookpane_test.go
-- [ ] T020 [P] [US1] Write test for HookPane.View() rendering with hook header in internal/tui/hookpane_test.go
+- [x] T016 [P] [US1] Write test for RunHookStreaming() basic output capture in internal/hooks/runner_test.go
+- [x] T017 [P] [US1] Write test for RunHookStreaming() stdout/stderr separation in internal/hooks/runner_test.go
+- [x] T018 [P] [US1] Write test for RunHookStreaming() channel closure on completion in internal/hooks/runner_test.go
+- [x] T019 [P] [US1] Write test for HookPane.AddLine() content update in internal/tui/hookpane_test.go
+- [x] T020 [P] [US1] Write test for HookPane.View() rendering with hook header in internal/tui/hookpane_test.go
 
 ### Implementation for User Story 1
 
-- [ ] T021 [US1] Add RunHookStreaming() function signature in internal/hooks/runner.go - accepts context, hook, hookCtx, returns (chan OutputLine, chan HookResult)
-- [ ] T022 [US1] Implement io.Pipe setup for stdout/stderr in RunHookStreaming() in internal/hooks/runner.go
-- [ ] T023 [US1] Implement goroutine readers for stdout/stderr pipes with bufio.Scanner in internal/hooks/runner.go
-- [ ] T024 [US1] Implement channel send logic for OutputLine messages in internal/hooks/runner.go
-- [ ] T025 [US1] Implement hook completion signaling via done channel in internal/hooks/runner.go
-- [ ] T026 [US1] Create HookPane struct wrapping viewport.Model in internal/tui/hookpane.go
-- [ ] T027 [US1] Implement NewHookPane(width, height int) constructor in internal/tui/hookpane.go
-- [ ] T028 [US1] Implement HookPane.AddLine(line OutputLine) method with auto-scroll in internal/tui/hookpane.go
-- [ ] T029 [US1] Implement HookPane.SetCurrentHook(hook Hook, index, total int) for header in internal/tui/hookpane.go
-- [ ] T030 [US1] Implement HookPane.View() rendering with header and styled content in internal/tui/hookpane.go
-- [ ] T031 [US1] Implement HookPane.Update(msg tea.Msg) for scroll handling in internal/tui/hookpane.go
-- [ ] T032 [US1] Add StateExecutingHooks constant to internal/tui/model.go
-- [ ] T033 [US1] Add hookPane, hookOutputChan, hookDoneChan fields to Model struct in internal/tui/model.go
-- [ ] T034 [US1] Implement waitForHookLine(chan OutputLine) tea.Cmd function in internal/tui/model.go
-- [ ] T035 [US1] Implement waitForHookDone(chan HookResult) tea.Cmd function in internal/tui/model.go
-- [ ] T036 [US1] Handle HookLineMsg in Update() - append to hookPane, re-queue listener in internal/tui/model.go
-- [ ] T037 [US1] Handle HookStartMsg in Update() - update hookPane header in internal/tui/model.go
-- [ ] T038 [US1] Handle HookCompleteMsg in Update() - transition state or start next hook in internal/tui/model.go
-- [ ] T039 [US1] Add StateExecutingHooks case to View() - render hookPane in internal/tui/model.go
-- [ ] T040 [US1] Add StateExecutingHooks case to handleKeyPress() - delegate scroll to hookPane in internal/tui/model.go
-- [ ] T041 [US1] Modify executeVersion() to return tea.Cmd that starts streaming hooks in internal/tui/model.go
-- [ ] T042 [US1] Handle WindowSizeMsg for hookPane resizing in internal/tui/model.go
-- [ ] T043 [US1] Run `go test ./internal/hooks/... ./internal/tui/... -v` to verify all US1 tests pass
-- [ ] T044 [US1] Run `golangci-lint run` to verify code quality
+- [x] T021 [US1] Add RunHookStreaming() function signature in internal/hooks/runner.go - accepts context, hook, hookCtx, returns (chan OutputLine, chan HookResult)
+- [x] T022 [US1] Implement io.Pipe setup for stdout/stderr in RunHookStreaming() in internal/hooks/runner.go
+- [x] T023 [US1] Implement goroutine readers for stdout/stderr pipes with bufio.Scanner in internal/hooks/runner.go
+- [x] T024 [US1] Implement channel send logic for OutputLine messages in internal/hooks/runner.go
+- [x] T025 [US1] Implement hook completion signaling via done channel in internal/hooks/runner.go
+- [x] T026 [US1] Create HookPane struct wrapping viewport.Model in internal/tui/hookpane.go
+- [x] T027 [US1] Implement NewHookPane(width, height int) constructor in internal/tui/hookpane.go
+- [x] T028 [US1] Implement HookPane.AddLine(line OutputLine) method with auto-scroll in internal/tui/hookpane.go
+- [x] T029 [US1] Implement HookPane.SetCurrentHook(hook Hook, index, total int) for header in internal/tui/hookpane.go
+- [x] T030 [US1] Implement HookPane.View() rendering with header and styled content in internal/tui/hookpane.go
+- [x] T031 [US1] Implement HookPane.Update(msg tea.Msg) for scroll handling in internal/tui/hookpane.go
+- [x] T032 [US1] Add StateExecutingHooks constant to internal/tui/model.go
+- [x] T033 [US1] Add hookPane, hookOutputChan, hookDoneChan fields to Model struct in internal/tui/model.go
+- [x] T034 [US1] Implement waitForHookLine(chan OutputLine) tea.Cmd function in internal/tui/model.go
+- [x] T035 [US1] Implement waitForHookDone(chan HookResult) tea.Cmd function in internal/tui/model.go
+- [x] T036 [US1] Handle HookLineMsg in Update() - append to hookPane, re-queue listener in internal/tui/model.go
+- [x] T037 [US1] Handle HookStartMsg in Update() - update hookPane header in internal/tui/model.go
+- [x] T038 [US1] Handle HookCompleteMsg in Update() - transition state or start next hook in internal/tui/model.go
+- [x] T039 [US1] Add StateExecutingHooks case to View() - render hookPane in internal/tui/model.go
+- [x] T040 [US1] Add StateExecutingHooks case to handleKeyPress() - delegate scroll to hookPane in internal/tui/model.go
+- [x] T041 [US1] Modify executeVersion() to return tea.Cmd that starts streaming hooks in internal/tui/model.go
+- [x] T042 [US1] Handle WindowSizeMsg for hookPane resizing in internal/tui/model.go
+- [x] T043 [US1] Run `go test ./internal/hooks/... ./internal/tui/... -v` to verify all US1 tests pass
+- [x] T044 [US1] Run `golangci-lint run` to verify code quality
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - hook output streams in TUI with scrolling
 

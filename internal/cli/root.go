@@ -151,7 +151,19 @@ func runRoot(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Load configuration and apply defaults for unset flags
-	cfg, _ := config.LoadFile(flagConfig)
+	var cfg *config.Config
+	var cfgErr error
+	if cmd.Flags().Changed("config") {
+		// Use explicitly specified config file
+		cfg, cfgErr = config.LoadFile(flagConfig)
+	} else {
+		// Search current directory for .bumpkin.yaml or .bumpkin.yml
+		cwd, _ := os.Getwd()
+		cfg, cfgErr = config.Load(cwd)
+	}
+	if cfgErr != nil {
+		cfg = config.Default()
+	}
 	applyConfigDefaults(cmd, cfg)
 
 	// Determine if we're in non-interactive mode

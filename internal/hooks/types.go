@@ -2,6 +2,35 @@ package hooks
 
 import "time"
 
+// StreamType identifies the source stream of hook output
+type StreamType int
+
+const (
+	// Stdout represents standard output stream
+	Stdout StreamType = iota
+	// Stderr represents standard error stream
+	Stderr
+)
+
+// String returns the string representation of StreamType
+func (s StreamType) String() string {
+	switch s {
+	case Stdout:
+		return "stdout"
+	case Stderr:
+		return "stderr"
+	default:
+		return "unknown"
+	}
+}
+
+// OutputLine represents a single line of output from a hook execution
+type OutputLine struct {
+	Text      string     // The line content (without trailing newline)
+	Stream    StreamType // Source stream (stdout or stderr)
+	Timestamp time.Time  // When the line was received
+}
+
 // HookType represents the type of hook
 type HookType string
 

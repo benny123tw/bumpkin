@@ -1,12 +1,15 @@
 package hooks
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -117,4 +120,125 @@ func RunHooksFailOpen(
 	}
 
 	return results, warnings
+}
+
+// RunHookStreaming executes a hook and streams output lines to channels.
+// Returns a channel for output lines and a channel for the final result.
+// The line channel will be closed after the result is sent.
+func RunHookStreaming(
+	ctx context.Context,
+	hook Hook,
+	hookCtx *HookContext,
+) (chan OutputLine, chan HookResult) {
+	lineChan := make(chan OutputLine, 100) // Buffered to prevent blocking
+	doneChan := make(chan HookResult, 1)
+
+	go func() {
+		defer close(lineChan)
+		defer close(doneChan)
+
+		start := time.Now()
+
+		result := HookResult{
+			Hook:    hook,
+			Success: true,
+		}
+
+		// Skip empty commands
+		if strings.TrimSpace(hook.Command) == "" {
+			result.Duration = time.Since(start)
+			doneChan <- result
+			return
+		}
+
+		// Create command
+		var cmd *exec.Cmd
+		if runtime.GOOS == "windows" {
+			//nolint:gosec // User-defined hook command from config file
+			cmd = exec.CommandContext(ctx, "cmd", "/C", hook.Command)
+		} else {
+			//nolint:gosec // User-defined hook command from config file
+			cmd = exec.CommandContext(ctx, "sh", "-c", hook.Command)
+		}
+
+		// Set environment variables
+		if hookCtx != nil {
+			cmd.Env = append(os.Environ(), hookCtx.ToEnv()...)
+		} else {
+			cmd.Env = os.Environ()
+		}
+
+		// Create pipes for stdout and stderr
+		stdoutPipe, err := cmd.StdoutPipe()
+		if err != nil {
+			result.Success = false
+			result.Error = fmt.Errorf("failed to create stdout pipe: %w", err)
+			result.Duration = time.Since(start)
+			doneChan <- result
+			return
+		}
+
+		stderrPipe, err := cmd.StderrPipe()
+		if err != nil {
+			result.Success = false
+			result.Error = fmt.Errorf("failed to create stderr pipe: %w", err)
+			result.Duration = time.Since(start)
+			doneChan <- result
+			return
+		}
+
+		// Start the command
+		if err := cmd.Start(); err != nil {
+			result.Success = false
+			result.Error = fmt.Errorf("failed to start hook: %w", err)
+			result.Duration = time.Since(start)
+			doneChan <- result
+			return
+		}
+
+		// Read stdout and stderr in separate goroutines
+		var wg sync.WaitGroup
+		wg.Add(2)
+
+		// Read stdout
+		go func() {
+			defer wg.Done()
+			readPipeToChannel(stdoutPipe, Stdout, lineChan)
+		}()
+
+		// Read stderr
+		go func() {
+			defer wg.Done()
+			readPipeToChannel(stderrPipe, Stderr, lineChan)
+		}()
+
+		// Wait for all readers to complete
+		wg.Wait()
+
+		// Wait for command to finish
+		err = cmd.Wait()
+		result.Duration = time.Since(start)
+
+		if err != nil {
+			result.Success = false
+			result.Error = fmt.Errorf("hook failed: %w", err)
+		}
+
+		doneChan <- result
+	}()
+
+	return lineChan, doneChan
+}
+
+// readPipeToChannel reads lines from a pipe and sends them to the channel
+func readPipeToChannel(pipe io.Reader, streamType StreamType, lineChan chan<- OutputLine) {
+	scanner := bufio.NewScanner(pipe)
+	for scanner.Scan() {
+		lineChan <- OutputLine{
+			Text:      scanner.Text(),
+			Stream:    streamType,
+			Timestamp: time.Now(),
+		}
+	}
+	// Ignore scanner errors - they're typically just EOF
 }
