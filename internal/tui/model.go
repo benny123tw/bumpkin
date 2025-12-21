@@ -953,9 +953,11 @@ func (m *Model) startPostTagHooks() tea.Cmd {
 		return m.doPushAndPostPush
 	}
 
-	// Initialize hook pane if not already done
+	// Initialize hook pane if not already done, or clear it for new phase
 	if m.hookPane == nil {
 		m.initHookPane()
+	} else {
+		m.hookPane.Clear() // Clear buffer for new phase
 	}
 
 	// Set up post-tag hooks
@@ -974,9 +976,11 @@ func (m *Model) startPostPushHooks() tea.Cmd {
 		return nil
 	}
 
-	// Initialize hook pane if not already done
+	// Initialize hook pane if not already done, or clear it for new phase
 	if m.hookPane == nil {
 		m.initHookPane()
+	} else {
+		m.hookPane.Clear() // Clear buffer for new phase
 	}
 
 	// Set up post-push hooks
