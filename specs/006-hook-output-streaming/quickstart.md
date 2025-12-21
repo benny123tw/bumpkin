@@ -51,7 +51,7 @@ func (b *OutputBuffer) AddLine(line OutputLine) {
 }
 ```
 
-### 2. Streaming Hook Runner (internal/hooks/stream.go)
+### 2. Streaming Hook Runner (internal/hooks/runner.go)
 
 Add streaming capability to hook execution:
 
@@ -196,7 +196,7 @@ Verify:
 | File | Purpose |
 |------|---------|
 | `internal/hooks/buffer.go` | Thread-safe line buffer |
-| `internal/hooks/stream.go` | Streaming hook runner |
+| `internal/hooks/runner.go` | Streaming hook runner |
 | `internal/tui/hookpane.go` | Output viewport component |
 | `internal/tui/messages.go` | Hook-related TUI messages |
 | `internal/tui/model.go` | State and message handling |
