@@ -99,7 +99,7 @@ func TestOutputBuffer_ThreadSafety(t *testing.T) {
 	// Spawn 10 goroutines, each adding 100 lines
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
-		go func(id int) {
+		go func() {
 			defer wg.Done()
 			for j := 0; j < 100; j++ {
 				buf.AddLine(OutputLine{
@@ -108,7 +108,7 @@ func TestOutputBuffer_ThreadSafety(t *testing.T) {
 					Timestamp: time.Now(),
 				})
 			}
-		}(i)
+		}()
 	}
 
 	wg.Wait()

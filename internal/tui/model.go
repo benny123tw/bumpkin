@@ -192,17 +192,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.commitsPane.Height = commitsPaneHeight - 2
 		}
 
-		// Resize hook pane if it exists
+		// Resize hook pane if it exists (use same logic as initHookPane)
 		if m.hookPane != nil {
-			paneWidth := m.width - 4
-			paneHeight := m.height - 6
-			if paneWidth < 40 {
-				paneWidth = 40
+			hookHeaderHeight := 4
+			hookFooterHeight := 2
+			hookAvailableHeight := m.height - hookHeaderHeight - hookFooterHeight
+
+			hookPaneHeight := hookAvailableHeight * 60 / 100
+			if hookPaneHeight < 10 {
+				hookPaneHeight = 10
 			}
-			if paneHeight < 10 {
-				paneHeight = 10
+			if hookPaneHeight > 20 {
+				hookPaneHeight = 20
 			}
-			m.hookPane.SetSize(paneWidth, paneHeight)
+
+			hookPaneWidth := m.width - 4
+			if hookPaneWidth < 40 {
+				hookPaneWidth = 40
+			}
+
+			m.hookPane.SetSize(hookPaneWidth, hookPaneHeight)
 		}
 
 		return m, nil
@@ -892,15 +901,25 @@ func (m *Model) continueExecution() tea.Cmd {
 
 // initHookPane initializes the hook output pane with current dimensions
 func (m *Model) initHookPane() {
-	// Calculate pane dimensions - use most of the screen
-	paneWidth := m.width - 4
-	paneHeight := m.height - 6 // Leave room for header and footer
-	if paneWidth < 40 {
-		paneWidth = 40
-	}
+	// Calculate pane dimensions - cap height to maintain consistent layout
+	headerHeight := 4 // title + phase label + spacing
+	footerHeight := 2 // help text
+	availableHeight := m.height - headerHeight - footerHeight
+
+	// Cap pane height to ~60% of available space (similar to version pane)
+	paneHeight := availableHeight * 60 / 100
 	if paneHeight < 10 {
 		paneHeight = 10
 	}
+	if paneHeight > 20 {
+		paneHeight = 20 // Max 20 lines to keep it manageable
+	}
+
+	paneWidth := m.width - 4
+	if paneWidth < 40 {
+		paneWidth = 40
+	}
+
 	m.hookPane = NewHookPane(paneWidth, paneHeight)
 }
 
