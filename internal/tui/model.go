@@ -344,35 +344,40 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// handleCtrlC handles ctrl+c key press with double-press cancellation for hooks
+func (m Model) handleCtrlC() (tea.Model, tea.Cmd) {
+	if m.state == StateDone || m.state == StateError {
+		return m, tea.Quit
+	}
+	// Handle cancellation during hook execution
+	if m.state == StateExecutingHooks {
+		// Check if this is second ctrl+c within 3 seconds
+		if m.cancelPending && time.Since(m.cancelPendingTime) < 3*time.Second {
+			// Cancel the hook
+			if m.hookCancelFunc != nil {
+				m.hookCancelFunc()
+			}
+			m.cancelPending = false
+			m.err = fmt.Errorf("hook cancelled by user")
+			m.state = StateError
+			return m, nil
+		}
+		// First ctrl+c - show warning
+		m.cancelPending = true
+		m.cancelPendingTime = time.Now()
+		return m, nil
+	}
+	// Don't allow quit during non-hook execution
+	if m.state == StateExecuting {
+		return m, nil
+	}
+	return m, tea.Quit
+}
+
 func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "ctrl+c":
-		if m.state == StateDone || m.state == StateError {
-			return m, tea.Quit
-		}
-		// Handle cancellation during hook execution
-		if m.state == StateExecutingHooks {
-			// Check if this is second ctrl+c within 3 seconds
-			if m.cancelPending && time.Since(m.cancelPendingTime) < 3*time.Second {
-				// Cancel the hook
-				if m.hookCancelFunc != nil {
-					m.hookCancelFunc()
-				}
-				m.cancelPending = false
-				m.err = fmt.Errorf("hook cancelled by user")
-				m.state = StateError
-				return m, nil
-			}
-			// First ctrl+c - show warning
-			m.cancelPending = true
-			m.cancelPendingTime = time.Now()
-			return m, nil
-		}
-		// Don't allow quit during non-hook execution
-		if m.state == StateExecuting {
-			return m, nil
-		}
-		return m, tea.Quit
+		return m.handleCtrlC()
 
 	case "q":
 		if m.state == StateDone || m.state == StateError {
