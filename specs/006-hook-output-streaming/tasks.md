@@ -262,4 +262,4 @@ For each task group:
 - Verify tests fail before implementing (TDD)
 - Commit after each task or logical group
 - Stop at any checkpoint to validate story independently
-- All paths are relative to repository root `/Users/benny/Documents/Projects/golang/bumpkin/`
+- All paths are relative to the repository root (`./`)
