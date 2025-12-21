@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -84,6 +85,11 @@ type Model struct {
 	currentHooks   []hooks.Hook          // Current hooks being executed
 	currentHookIdx int                   // Index of current hook in sequence
 	hookPhase      hooks.HookType        // Current hook phase (pre-tag, post-tag, etc.)
+
+	// Hook cancellation
+	hookCancelFunc    context.CancelFunc // Function to cancel current hook
+	cancelPending     bool               // Whether first ctrl+c was pressed
+	cancelPendingTime time.Time          // When first ctrl+c was pressed
 
 	// Window size
 	width  int
@@ -340,7 +346,35 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "ctrl+c", "q":
+	case "ctrl+c":
+		if m.state == StateDone || m.state == StateError {
+			return m, tea.Quit
+		}
+		// Handle cancellation during hook execution
+		if m.state == StateExecutingHooks {
+			// Check if this is second ctrl+c within 3 seconds
+			if m.cancelPending && time.Since(m.cancelPendingTime) < 3*time.Second {
+				// Cancel the hook
+				if m.hookCancelFunc != nil {
+					m.hookCancelFunc()
+				}
+				m.cancelPending = false
+				m.err = fmt.Errorf("hook cancelled by user")
+				m.state = StateError
+				return m, nil
+			}
+			// First ctrl+c - show warning
+			m.cancelPending = true
+			m.cancelPendingTime = time.Now()
+			return m, nil
+		}
+		// Don't allow quit during non-hook execution
+		if m.state == StateExecuting {
+			return m, nil
+		}
+		return m, tea.Quit
+
+	case "q":
 		if m.state == StateDone || m.state == StateError {
 			return m, tea.Quit
 		}
@@ -761,7 +795,14 @@ func (m Model) renderHookExecutionView() string {
 	sb.WriteString(m.spinner.View())
 	sb.WriteString(" ")
 	sb.WriteString(SubtitleStyle.Render(phaseLabel))
-	sb.WriteString("\n\n")
+	sb.WriteString("\n")
+
+	// Show cancellation warning if pending
+	if m.cancelPending && time.Since(m.cancelPendingTime) < 3*time.Second {
+		sb.WriteString(WarningStyle.Render("  Press ctrl+c again to cancel"))
+		sb.WriteString("\n")
+	}
+	sb.WriteString("\n")
 
 	// Render hook output pane
 	if m.hookPane != nil {
@@ -846,6 +887,9 @@ func (m *Model) startNextHook() tea.Cmd {
 
 	hook := m.currentHooks[m.currentHookIdx]
 
+	// Reset cancel state for new hook
+	m.cancelPending = false
+
 	// Create hook context
 	hookCtx := &hooks.HookContext{
 		TagName:         m.newVersion,
@@ -856,8 +900,12 @@ func (m *Model) startNextHook() tea.Cmd {
 		DryRun:          m.config.DryRun,
 	}
 
+	// Create cancellable context for hook execution
+	ctx, cancel := context.WithCancel(context.Background())
+	m.hookCancelFunc = cancel
+
 	// Start streaming hook execution
-	lineChan, doneChan := hooks.RunHookStreaming(context.Background(), hook, hookCtx)
+	lineChan, doneChan := hooks.RunHookStreaming(ctx, hook, hookCtx)
 	m.hookLineChan = lineChan
 	m.hookDoneChan = doneChan
 
