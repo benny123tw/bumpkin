@@ -153,9 +153,13 @@ func runRoot(cmd *cobra.Command, _ []string) error {
 	// Load configuration and apply defaults for unset flags
 	var cfg *config.Config
 	var cfgErr error
-	if cmd.Flags().Changed("config") {
+	configExplicit := cmd.Flags().Changed("config")
+	if configExplicit {
 		// Use explicitly specified config file
 		cfg, cfgErr = config.LoadFile(flagConfig)
+		if cfgErr != nil {
+			return fmt.Errorf("failed to load config file %q: %w", flagConfig, cfgErr)
+		}
 	} else {
 		// Search current directory for .bumpkin.yaml or .bumpkin.yml
 		cwd, err := os.Getwd()
@@ -163,9 +167,11 @@ func runRoot(cmd *cobra.Command, _ []string) error {
 			return fmt.Errorf("failed to get working directory: %w", err)
 		}
 		cfg, cfgErr = config.Load(cwd)
-	}
-	if cfgErr != nil {
-		cfg = config.Default()
+		if cfgErr != nil {
+			// Auto-discovered config failed to load; warn and use defaults
+			fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to load config: %v (using defaults)\n", cfgErr)
+			cfg = config.Default()
+		}
 	}
 	applyConfigDefaults(cmd, cfg)
 
