@@ -288,6 +288,11 @@ func TestRunHookStreaming_BasicOutput(t *testing.T) {
 		}
 	}
 
+	// Drain any remaining buffered lines after done signal
+	for line := range lineChan {
+		lines = append(lines, line)
+	}
+
 	// Should have received "hello" on stdout
 	require.GreaterOrEqual(t, len(lines), 1)
 	assert.Equal(t, "hello", lines[0].Text)
@@ -411,6 +416,11 @@ func TestRunHookStreaming_Failure(t *testing.T) {
 		case <-time.After(5 * time.Second):
 			t.Fatal("timeout waiting for hook to complete")
 		}
+	}
+
+	// Drain any remaining buffered lines after done signal
+	for line := range lineChan {
+		lines = append(lines, line)
 	}
 
 	// Should have received output before failure
