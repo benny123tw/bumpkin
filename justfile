@@ -35,6 +35,10 @@ test-cov:
 lint:
     golangci-lint run ./...
 
+# Check for code modernization opportunities (Go 1.21+ features)
+modernize:
+    go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest ./...
+
 # Format code
 fmt:
     golangci-lint fmt ./...
