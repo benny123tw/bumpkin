@@ -1,38 +1,67 @@
 # bumpkin Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2025-12-14
+## Overview
 
-## Active Technologies
-- Go 1.24+ (002-release-integration)
-- N/A (file-based config: `.bumpkin.yaml`) (002-release-integration)
-- Go 1.24 + Cobra v1.10.2 (already in use for CLI) (004-basic-commands)
-- YAML files (`.bumpkin.yaml` configuration) (004-basic-commands)
-- Go 1.24+ + charmbracelet/bubbletea v1.3.10, charmbracelet/bubbles v0.21.0, charmbracelet/lipgloss v1.1.0 (005-expandable-commit-history)
-- N/A (git repository read-only) (005-expandable-commit-history)
-- N/A (in-memory buffer only) (006-hook-output-streaming)
-
-- Go 1.21+ (001-version-tagger)
+Bumpkin is a semantic version tagger CLI for git repositories, built with Go 1.24+ and BubbleTea TUI framework.
 
 ## Project Structure
 
 ```text
-src/
-tests/
+cmd/bumpkin/       # CLI entry point
+internal/
+  cli/             # Cobra command definitions and flags
+  config/          # YAML config loading (.bumpkin.yaml)
+  conventional/    # Conventional commit parsing
+  executor/        # Tag creation and push execution
+  git/             # Git repository operations (go-git)
+  hooks/           # Hook execution and output streaming
+  tui/             # BubbleTea TUI components
+  version/         # Semver parsing and bumping
+specs/             # Feature specifications
 ```
 
 ## Commands
 
-# Add commands for Go 1.21+
+```bash
+# Development
+just build          # Build binary to bin/
+just test           # Run all tests
+just test-v         # Run tests with verbose output
+just test-cov       # Run tests with coverage report
+just lint           # Run golangci-lint
+just fmt            # Format code
+just check          # Run tests + lint
+just modernize      # Check for Go 1.21+ modernization opportunities
+
+# Running
+just run            # Run interactive mode
+just run --help     # Show CLI help
+just dry-patch      # Dry run patch bump
+just dry-minor      # Dry run minor bump
+just dry-conventional  # Dry run with conventional commit analysis
+```
 
 ## Code Style
 
-Go 1.21+: Follow standard conventions
+- Go 1.24+ with modern idioms (use `min`/`max`, `range over int`, `strings.Cut`)
+- Follow golangci-lint rules (see `.golangci.yml`)
+- Use BubbleTea patterns for TUI (tea.Model, tea.Cmd, tea.Msg)
+- Thread-safe buffers with sync.RWMutex for concurrent access
+- Context-based cancellation for hook execution
 
-## Recent Changes
-- 006-hook-output-streaming: Added Go 1.24+ + charmbracelet/bubbletea v1.3.10, charmbracelet/bubbles v0.21.0, charmbracelet/lipgloss v1.1.0
-- 005-expandable-commit-history: Added Go 1.24+ + charmbracelet/bubbletea v1.3.10, charmbracelet/bubbles v0.21.0, charmbracelet/lipgloss v1.1.0
-- 004-basic-commands: Added Go 1.24 + Cobra v1.10.2 (already in use for CLI)
+## Key Libraries
 
+- `github.com/spf13/cobra` - CLI framework
+- `github.com/charmbracelet/bubbletea` - TUI framework
+- `github.com/charmbracelet/lipgloss` - TUI styling
+- `github.com/go-git/go-git/v5` - Git operations
+- `gopkg.in/yaml.v3` - Config parsing
+
+## Testing
+
+- Use `testify/assert` and `testify/require` for assertions
+- Tests are in `*_test.go` files alongside implementation
+- Run specific tests: `go test ./internal/hooks/... -run TestRunHook`
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
