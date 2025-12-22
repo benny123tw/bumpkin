@@ -240,5 +240,13 @@ func readPipeToChannel(pipe io.Reader, streamType StreamType, lineChan chan<- Ou
 			Timestamp: time.Now(),
 		}
 	}
-	// Ignore scanner errors - they're typically just EOF
+	// Check for scanner errors (e.g., line too long, I/O error)
+	// Send as stderr line so user sees the issue in output
+	if err := scanner.Err(); err != nil {
+		lineChan <- OutputLine{
+			Text:      fmt.Sprintf("[scanner error: %v]", err),
+			Stream:    Stderr,
+			Timestamp: time.Now(),
+		}
+	}
 }
