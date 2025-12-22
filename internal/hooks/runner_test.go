@@ -336,6 +336,15 @@ func TestRunHookStreaming_StdoutStderrSeparation(t *testing.T) {
 		}
 	}
 
+	// Drain any remaining buffered lines after done signal
+	for line := range lineChan {
+		if line.Stream == Stdout {
+			stdoutLines = append(stdoutLines, line)
+		} else {
+			stderrLines = append(stderrLines, line)
+		}
+	}
+
 	// Should have at least one line on each stream
 	require.GreaterOrEqual(t, len(stdoutLines), 1)
 	require.GreaterOrEqual(t, len(stderrLines), 1)
