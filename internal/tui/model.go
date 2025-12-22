@@ -944,19 +944,9 @@ func (m *Model) calculateHookPaneDimensions() (width, height int) {
 	footerHeight := 2 // help text
 	availableHeight := m.height - headerHeight - footerHeight
 
-	// Cap pane height to ~60% of available space (similar to version pane)
-	height = availableHeight * 60 / 100
-	if height < 10 {
-		height = 10
-	}
-	if height > 20 {
-		height = 20 // Max 20 lines to keep it manageable
-	}
-
-	width = m.width - 4
-	if width < 40 {
-		width = 40
-	}
+	// Cap pane height to ~60% of available space (min 10, max 20 lines)
+	height = min(max(availableHeight*60/100, 10), 20)
+	width = max(m.width-4, 40)
 
 	return width, height
 }
