@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"runtime/debug"
 
 	"github.com/charmbracelet/fang"
 	"github.com/spf13/cobra"
@@ -17,12 +18,36 @@ import (
 	"github.com/benny123tw/bumpkin/internal/version"
 )
 
-// Version information (set at build time)
+// Version information (set at build time via ldflags, or detected from build info)
 var (
 	AppVersion = "dev"
 	BuildDate  = "unknown"
 	GitCommit  = "unknown"
 )
+
+func init() {
+	// If version wasn't set via ldflags, try to get it from build info
+	// This works when installed via "go install"
+	if AppVersion == "dev" {
+		if info, ok := debug.ReadBuildInfo(); ok {
+			if info.Main.Version != "" && info.Main.Version != "(devel)" {
+				AppVersion = info.Main.Version
+			}
+			for _, setting := range info.Settings {
+				switch setting.Key {
+				case "vcs.revision":
+					if GitCommit == "unknown" && len(setting.Value) >= 7 {
+						GitCommit = setting.Value[:7]
+					}
+				case "vcs.time":
+					if BuildDate == "unknown" {
+						BuildDate = setting.Value
+					}
+				}
+			}
+		}
+	}
+}
 
 // PrintVersionInfo prints version information to the given command's output
 func PrintVersionInfo(cmd *cobra.Command) {
