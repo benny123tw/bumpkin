@@ -301,9 +301,16 @@ func TestRunHookStreaming_StdoutStderrSeparation(t *testing.T) {
 		Version: "1.0.0",
 	}
 
-	// Command that writes to both stdout and stderr
+	// Command that writes to both stdout and stderr (platform-specific)
+	var cmd string
+	if runtime.GOOS == "windows" {
+		cmd = "echo stdout_line & echo stderr_line 1>&2"
+	} else {
+		cmd = "echo stdout_line && echo stderr_line >&2"
+	}
+
 	hook := Hook{
-		Command: "echo stdout_line && echo stderr_line >&2",
+		Command: cmd,
 		Type:    PreTag,
 	}
 
