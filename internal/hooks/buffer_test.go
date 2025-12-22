@@ -97,11 +97,11 @@ func TestOutputBuffer_ThreadSafety(t *testing.T) {
 	var wg sync.WaitGroup
 
 	// Spawn 10 goroutines, each adding 100 lines
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for j := 0; j < 100; j++ {
+			for range 100 {
 				buf.AddLine(OutputLine{
 					Text:      "line from goroutine",
 					Stream:    Stdout,

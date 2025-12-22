@@ -61,14 +61,8 @@ func RenderCommitDetailOverlay(commit *git.Commit, width, height int) string {
 		sb.WriteString(SubtitleStyle.Render(commit.Message))
 	}
 
-	// Calculate overlay dimensions
-	overlayWidth := width - 10
-	if overlayWidth < 40 {
-		overlayWidth = 40
-	}
-	if overlayWidth > 80 {
-		overlayWidth = 80
-	}
+	// Calculate overlay dimensions (min 40, max 80)
+	overlayWidth := min(max(width-10, 40), 80)
 
 	content := sb.String()
 

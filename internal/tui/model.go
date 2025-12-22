@@ -188,10 +188,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if availableHeight > 0 {
 			// For small terminals (height < 16), we still show dual pane but minimal
-			commitsPaneHeight := availableHeight * 30 / 100
-			if commitsPaneHeight < 3 {
-				commitsPaneHeight = 3 // Minimum height for usability
-			}
+			commitsPaneHeight := max(availableHeight*30/100, 3) // Minimum height for usability
 
 			// Account for border (2 chars: top + bottom)
 			m.commitsPane.Width = m.width - 2
@@ -497,10 +494,7 @@ func (m Model) handleVersionSelectKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					RenderCommitListForViewport(m.commits, m.selectedCommitIndex),
 				)
 				// Scroll to show selection at bottom of viewport
-				newOffset := m.selectedCommitIndex - m.commitsPane.Height + 1
-				if newOffset < 0 {
-					newOffset = 0
-				}
+				newOffset := max(m.selectedCommitIndex-m.commitsPane.Height+1, 0)
 				m.commitsPane.SetYOffset(newOffset)
 			}
 			return m, nil
@@ -705,10 +699,7 @@ func (m Model) renderVersionSelectView() string {
 	}
 
 	// Apply border and width to commits pane
-	commitsPaneWidth := m.width - 2 // Account for left/right margins
-	if commitsPaneWidth < 20 {
-		commitsPaneWidth = 20
-	}
+	commitsPaneWidth := max(m.width-2, 20) // Account for left/right margins
 	commitsBox := commitsBorderStyle.
 		Width(commitsPaneWidth).
 		Render(commitsHeader + "\n" + commitsContent)

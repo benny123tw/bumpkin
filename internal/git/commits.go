@@ -115,10 +115,7 @@ func (r *Repository) resolveTagToCommit(tagRef *plumbing.Reference) plumbing.Has
 // commitFromObject converts a go-git Commit object to our Commit struct
 func commitFromObject(c *object.Commit) *Commit {
 	message := strings.TrimSpace(c.Message)
-	subject := message
-	if idx := strings.Index(message, "\n"); idx != -1 {
-		subject = message[:idx]
-	}
+	subject, _, _ := strings.Cut(message, "\n")
 
 	return &Commit{
 		Hash:        c.Hash.String(),
