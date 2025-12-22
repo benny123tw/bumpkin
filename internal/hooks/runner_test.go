@@ -1,3 +1,4 @@
+//nolint:goconst // "windows" string used for OS-specific test logic
 package hooks
 
 import (
@@ -252,4 +253,177 @@ func TestRunHooksFailOpen_AllFail(t *testing.T) {
 	assert.False(t, results[0].Success)
 	assert.False(t, results[1].Success)
 	assert.Len(t, warnings, 2)
+}
+
+// T016: Test RunHookStreaming basic output capture
+func TestRunHookStreaming_BasicOutput(t *testing.T) {
+	ctx := context.Background()
+	hookCtx := &HookContext{
+		Version: "1.0.0",
+		TagName: "v1.0.0",
+	}
+
+	hook := Hook{
+		Command: "echo hello",
+		Type:    PreTag,
+	}
+
+	lineChan, doneChan := RunHookStreaming(ctx, hook, hookCtx)
+
+	// Collect all output lines
+	var lines []OutputLine
+	done := false
+	for !done {
+		select {
+		case line, ok := <-lineChan:
+			if ok {
+				lines = append(lines, line)
+			}
+		case result := <-doneChan:
+			assert.True(t, result.Success)
+			assert.NoError(t, result.Error)
+			done = true
+		case <-time.After(5 * time.Second):
+			t.Fatal("timeout waiting for hook to complete")
+		}
+	}
+
+	// Drain any remaining buffered lines after done signal
+	for line := range lineChan {
+		lines = append(lines, line)
+	}
+
+	// Should have received "hello" on stdout
+	require.GreaterOrEqual(t, len(lines), 1)
+	assert.Equal(t, "hello", lines[0].Text)
+	assert.Equal(t, Stdout, lines[0].Stream)
+}
+
+// T017: Test RunHookStreaming stdout/stderr separation
+func TestRunHookStreaming_StdoutStderrSeparation(t *testing.T) {
+	ctx := context.Background()
+	hookCtx := &HookContext{
+		Version: "1.0.0",
+	}
+
+	// Command that writes to both stdout and stderr (platform-specific)
+	var cmd string
+	if runtime.GOOS == "windows" {
+		cmd = "echo stdout_line & echo stderr_line 1>&2"
+	} else {
+		cmd = "echo stdout_line && echo stderr_line >&2"
+	}
+
+	hook := Hook{
+		Command: cmd,
+		Type:    PreTag,
+	}
+
+	lineChan, doneChan := RunHookStreaming(ctx, hook, hookCtx)
+
+	var stdoutLines, stderrLines []OutputLine
+	done := false
+	for !done {
+		select {
+		case line, ok := <-lineChan:
+			if ok {
+				if line.Stream == Stdout {
+					stdoutLines = append(stdoutLines, line)
+				} else {
+					stderrLines = append(stderrLines, line)
+				}
+			}
+		case result := <-doneChan:
+			assert.True(t, result.Success)
+			done = true
+		case <-time.After(5 * time.Second):
+			t.Fatal("timeout waiting for hook to complete")
+		}
+	}
+
+	// Drain any remaining buffered lines after done signal
+	for line := range lineChan {
+		if line.Stream == Stdout {
+			stdoutLines = append(stdoutLines, line)
+		} else {
+			stderrLines = append(stderrLines, line)
+		}
+	}
+
+	// Should have at least one line on each stream
+	require.GreaterOrEqual(t, len(stdoutLines), 1)
+	require.GreaterOrEqual(t, len(stderrLines), 1)
+	assert.Equal(t, "stdout_line", stdoutLines[0].Text)
+	assert.Equal(t, "stderr_line", stderrLines[0].Text)
+}
+
+// T018: Test RunHookStreaming channel closure on completion
+func TestRunHookStreaming_ChannelClosure(t *testing.T) {
+	ctx := context.Background()
+	hookCtx := &HookContext{
+		Version: "1.0.0",
+	}
+
+	hook := Hook{
+		Command: "echo done",
+		Type:    PreTag,
+	}
+
+	lineChan, doneChan := RunHookStreaming(ctx, hook, hookCtx)
+
+	// Wait for completion
+	select {
+	case <-doneChan:
+		// After done, line channel should be closed
+		// Drain remaining lines
+		for range lineChan {
+			// consume remaining lines
+		}
+		// Channel should now be closed
+		_, ok := <-lineChan
+		assert.False(t, ok, "line channel should be closed after hook completion")
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for hook to complete")
+	}
+}
+
+// Test RunHookStreaming with failing hook
+func TestRunHookStreaming_Failure(t *testing.T) {
+	ctx := context.Background()
+	hookCtx := &HookContext{
+		Version: "1.0.0",
+	}
+
+	hook := Hook{
+		Command: "echo before_fail && exit 1",
+		Type:    PreTag,
+	}
+
+	lineChan, doneChan := RunHookStreaming(ctx, hook, hookCtx)
+
+	var lines []OutputLine
+	done := false
+	for !done {
+		select {
+		case line, ok := <-lineChan:
+			if ok {
+				lines = append(lines, line)
+			}
+		case result := <-doneChan:
+			assert.False(t, result.Success)
+			assert.Error(t, result.Error)
+			done = true
+		case <-time.After(5 * time.Second):
+			t.Fatal("timeout waiting for hook to complete")
+		}
+	}
+
+	// Drain any remaining buffered lines after done signal
+	for line := range lineChan {
+		lines = append(lines, line)
+	}
+
+	// Should have received output before failure
+	require.GreaterOrEqual(t, len(lines), 1)
+	assert.Equal(t, "before_fail", lines[0].Text)
 }

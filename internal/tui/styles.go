@@ -170,6 +170,36 @@ var (
 				Bold(true)
 )
 
+// Hook output styles for streaming display
+var (
+	// StdoutStyle for standard output lines (normal text)
+	StdoutStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("255"))
+
+	// StderrStyle for standard error lines (red/orange)
+	StderrStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("9")) // Red
+
+	// HookHeaderStyle for hook section headers
+	HookHeaderStyle = lipgloss.NewStyle().
+			Foreground(primaryColor).
+			Bold(true)
+
+	// HookOutputPaneStyle for the hook output viewport container
+	HookOutputPaneStyle = lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(secondaryColor)
+
+	// StreamPrefixStyle for the [stdout]/[stderr] prefix
+	StreamPrefixStyle = lipgloss.NewStyle().
+				Foreground(mutedColor)
+
+	// MutedStyle for placeholder text
+	MutedStyle = lipgloss.NewStyle().
+			Foreground(mutedColor).
+			Italic(true)
+)
+
 // Icons
 const (
 	IconCheck    = "✓"
