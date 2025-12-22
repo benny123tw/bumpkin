@@ -22,7 +22,7 @@ func TestHookPane_AddLine(t *testing.T) {
 	pane.AddLine(line)
 
 	// Verify line was added to buffer
-	assert.Equal(t, 1, pane.buffer.LineCount())
+	assert.Equal(t, 1, pane.Buffer().LineCount())
 
 	// View should contain the line
 	view := pane.View()
@@ -61,7 +61,7 @@ func TestHookPane_MultipleLines(t *testing.T) {
 		pane.AddLine(line)
 	}
 
-	assert.Equal(t, 3, pane.buffer.LineCount())
+	assert.Equal(t, 3, pane.Buffer().LineCount())
 
 	view := pane.View()
 	assert.Contains(t, view, "Line 1")
@@ -99,9 +99,9 @@ func TestHookPane_Clear(t *testing.T) {
 	pane.AddLine(hooks.OutputLine{Text: "Line 1", Stream: hooks.Stdout, Timestamp: time.Now()})
 	pane.AddLine(hooks.OutputLine{Text: "Line 2", Stream: hooks.Stdout, Timestamp: time.Now()})
 
-	assert.Equal(t, 2, pane.buffer.LineCount())
+	assert.Equal(t, 2, pane.Buffer().LineCount())
 
 	pane.Clear()
 
-	assert.Equal(t, 0, pane.buffer.LineCount())
+	assert.Equal(t, 0, pane.Buffer().LineCount())
 }
