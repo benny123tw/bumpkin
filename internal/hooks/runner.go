@@ -124,7 +124,9 @@ func RunHooksFailOpen(
 
 // RunHookStreaming executes a hook and streams output lines to channels.
 // Returns a channel for output lines and a channel for the final result.
-// The line channel will be closed after the result is sent.
+//
+// Callers should consume lineChan until doneChan signals completion.
+// Context cancellation will kill the hook process and close both channels.
 func RunHookStreaming(
 	ctx context.Context,
 	hook Hook,
