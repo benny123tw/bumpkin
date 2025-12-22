@@ -158,7 +158,10 @@ func runRoot(cmd *cobra.Command, _ []string) error {
 		cfg, cfgErr = config.LoadFile(flagConfig)
 	} else {
 		// Search current directory for .bumpkin.yaml or .bumpkin.yml
-		cwd, _ := os.Getwd()
+		cwd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("failed to get working directory: %w", err)
+		}
 		cfg, cfgErr = config.Load(cwd)
 	}
 	if cfgErr != nil {
