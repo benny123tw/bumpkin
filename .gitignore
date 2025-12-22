@@ -45,3 +45,6 @@ build/
 # Debug files
 debug.log
 *.log
+
+# Local planning files
+plans/
