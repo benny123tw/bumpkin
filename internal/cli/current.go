@@ -8,22 +8,31 @@ import (
 	"github.com/benny123tw/bumpkin/internal/git"
 )
 
-var currentCmd = &cobra.Command{
-	Use:   "current",
-	Short: "Show the current version (latest tag)",
-	Long: `Show the current version by displaying the latest semver tag.
+type currentCommand struct {
+	cmd *cobra.Command
+}
+
+// newCurrentCommand creates a command that displays the latest semantic version tag with an optional prefix filter.
+func newCurrentCommand() *currentCommand {
+	c := &currentCommand{}
+
+	currentCmd := &cobra.Command{
+		Use:   "current",
+		Short: "Show the current version (latest tag)",
+		Long: `Show the current version by displaying the latest semver tag.
 
 This command is useful for scripting and CI/CD pipelines where you need
 to quickly check the current version without launching the interactive UI.`,
-	RunE: runCurrent,
-}
+		RunE: c.execute,
+	}
 
-func init() {
 	currentCmd.Flags().StringP("prefix", "p", "v", "Tag prefix to filter versions")
-	rootCmd.AddCommand(currentCmd)
+
+	c.cmd = currentCmd
+	return c
 }
 
-func runCurrent(cmd *cobra.Command, _ []string) error {
+func (c *currentCommand) execute(cmd *cobra.Command, _ []string) error {
 	prefix, _ := cmd.Flags().GetString("prefix")
 
 	repo, err := git.OpenFromCurrent()

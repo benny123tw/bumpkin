@@ -10,7 +10,7 @@ import (
 
 // T052: Test for root command creation
 func TestRootCommand(t *testing.T) {
-	cmd := rootCmd
+	cmd := NewRootCmd(testBuildInfo())
 
 	assert.Equal(t, "bumpkin", cmd.Use)
 	assert.NotEmpty(t, cmd.Short)
@@ -31,7 +31,7 @@ func TestRootCommand_NonInteractiveModeWithFlags(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cmd := NewRootCmd()
+			cmd := NewRootCmd(testBuildInfo())
 			cmd.SetArgs(tt.args)
 
 			// The command should recognize these as non-interactive mode
@@ -44,7 +44,7 @@ func TestRootCommand_NonInteractiveModeWithFlags(t *testing.T) {
 
 // T066: Test that no flags triggers interactive mode
 func TestRootCommand_InteractiveModeWithoutFlags(t *testing.T) {
-	cmd := NewRootCmd()
+	cmd := NewRootCmd(testBuildInfo())
 	cmd.SetArgs([]string{})
 
 	// Parse with no args should work
@@ -63,7 +63,7 @@ func TestRootCommand_InteractiveModeWithoutFlags(t *testing.T) {
 
 // T121: Test exit codes
 func TestRootCommand_VersionFlag(t *testing.T) {
-	cmd := NewRootCmd()
+	cmd := NewRootCmd(testBuildInfo())
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 	cmd.SetArgs([]string{"--show-version"})

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"runtime/debug"
 
 	"github.com/charmbracelet/fang"
 	"github.com/spf13/cobra"
@@ -17,46 +16,6 @@ import (
 	"github.com/benny123tw/bumpkin/internal/tui"
 	"github.com/benny123tw/bumpkin/internal/version"
 )
-
-// Version information (set at build time via ldflags, or detected from build info)
-var (
-	AppVersion = "dev"
-	BuildDate  = "unknown"
-	GitCommit  = "unknown"
-)
-
-func init() {
-	// If version wasn't set via ldflags, try to get it from build info
-	// This works when installed via "go install"
-	if AppVersion == "dev" {
-		if info, ok := debug.ReadBuildInfo(); ok {
-			if info.Main.Version != "" && info.Main.Version != "(devel)" {
-				AppVersion = info.Main.Version
-			}
-			for _, setting := range info.Settings {
-				switch setting.Key {
-				case "vcs.revision":
-					if GitCommit == "unknown" && len(setting.Value) >= 7 {
-						GitCommit = setting.Value[:7]
-					}
-				case "vcs.time":
-					if BuildDate == "unknown" {
-						BuildDate = setting.Value
-					}
-				}
-			}
-		}
-	}
-}
-
-// PrintVersionInfo prints version information to the given command's output
-func PrintVersionInfo(cmd *cobra.Command) {
-	commit := GitCommit
-	if len(commit) > 7 {
-		commit = commit[:7]
-	}
-	fmt.Fprintf(cmd.OutOrStdout(), "bumpkin %s (%s, built %s)\n", AppVersion, commit, BuildDate)
-}
 
 // Flag variables
 var (
@@ -96,21 +55,16 @@ type JSONOutput struct {
 	Error           string `json:"error,omitempty"`
 }
 
-var rootCmd = &cobra.Command{
-	Use:   "bumpkin",
-	Short: "Semantic version tagger for git repositories",
-	Long: `Bumpkin is a CLI tool that helps you tag commits by analyzing
-conventional commit history and providing version options to select or customize.
-
-Run without flags for interactive mode, or use flags for automation.`,
-	SilenceUsage:  true,
-	SilenceErrors: true,
-	RunE:          runRoot,
+type rootCommand struct {
+	cmd  *cobra.Command
+	info BuildInfo
 }
 
-// NewRootCmd creates a new root command instance (for testing)
-func NewRootCmd() *cobra.Command {
-	cmd := &cobra.Command{
+// newRootCommand constructs the root CLI command with the provided build info.
+func newRootCommand(info BuildInfo) *rootCommand {
+	c := &rootCommand{info: info}
+
+	rootCmd := &cobra.Command{
 		Use:   "bumpkin",
 		Short: "Semantic version tagger for git repositories",
 		Long: `Bumpkin is a CLI tool that helps you tag commits by analyzing
@@ -119,17 +73,28 @@ conventional commit history and providing version options to select or customize
 Run without flags for interactive mode, or use flags for automation.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
-		RunE:          runRoot,
+		RunE:          c.runRoot,
 	}
 
-	addFlags(cmd)
-	return cmd
-}
-
-func init() {
 	addFlags(rootCmd)
+
+	// Add subcommands
+	rootCmd.AddCommand(newVersionCommand(info).cmd)
+	rootCmd.AddCommand(newCurrentCommand().cmd)
+	rootCmd.AddCommand(newInitCommand().cmd)
+
+	c.cmd = rootCmd
+	return c
 }
 
+// NewRootCmd returns the root *cobra.Command configured for the application using the supplied BuildInfo.
+// It is intended for use in tests to obtain a fully wired command instance with flags, subcommands, and build metadata.
+func NewRootCmd(info BuildInfo) *cobra.Command {
+	return newRootCommand(info).cmd
+}
+
+// addFlags registers CLI flags on cmd for bump types, prerelease options, behavior/configuration, and output controls;
+// it also defines a hidden legacy `-v` alias for show-version.
 func addFlags(cmd *cobra.Command) {
 	// Bump type flags
 	cmd.Flags().BoolVar(&flagPatch, "patch", false, "Bump patch version (x.y.Z)")
@@ -167,12 +132,11 @@ func addFlags(cmd *cobra.Command) {
 	cmd.Flags().MarkHidden("version")
 }
 
-func runRoot(cmd *cobra.Command, _ []string) error {
+func (c *rootCommand) runRoot(cmd *cobra.Command, _ []string) error {
 	// Handle version flag
 	showVer, _ := cmd.Flags().GetBool("version")
 	if flagShowVersion || showVer {
-		PrintVersionInfo(cmd)
-		return nil
+		return printVersion(cmd.OutOrStdout(), c.info)
 	}
 
 	// Load configuration and apply defaults for unset flags
@@ -408,6 +372,10 @@ func outputJSON(cmd *cobra.Command, result *executor.Result, err error) error {
 	return encoder.Encode(output)
 }
 
+// outputText writes a human-readable summary of a bump operation to the command's output.
+// It includes a dry-run marker when applicable, the previous and new versions, tag name,
+// short commit hash, whether a tag was created, push status (respecting --no-push and dry-run),
+// and any post-push hook warnings.
 func outputText(cmd *cobra.Command, result *executor.Result) error {
 	out := cmd.OutOrStdout()
 
@@ -448,9 +416,11 @@ func outputText(cmd *cobra.Command, result *executor.Result) error {
 	return nil
 }
 
-// Execute runs the root command
-func Execute() {
-	if err := fang.Execute(context.Background(), rootCmd); err != nil {
+// Execute runs the root CLI with the provided build information.
+// On failure, it writes the error to stderr and exits the process with the error's exit code.
+func Execute(info BuildInfo) {
+	c := newRootCommand(info)
+	if err := fang.Execute(context.Background(), c.cmd); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(GetExitCode(err))
 	}

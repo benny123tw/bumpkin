@@ -11,10 +11,11 @@ import (
 func TestVersionCommand(t *testing.T) {
 	// Test that `bumpkin version` subcommand works
 	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"version"})
+	cmd := NewRootCmd(testBuildInfo())
+	cmd.SetOut(buf)
+	cmd.SetArgs([]string{"version"})
 
-	err := rootCmd.Execute()
+	err := cmd.Execute()
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -24,18 +25,19 @@ func TestVersionCommand(t *testing.T) {
 
 func TestVersionCommand_MatchesFlag(t *testing.T) {
 	// Test that `bumpkin version` produces same output as `bumpkin --show-version`
-	// Both use the shared PrintVersionInfo function, so outputs should be identical
+	// Both use the same BuildInfo, so outputs should be identical
 
 	// Run version subcommand
 	bufVersion := new(bytes.Buffer)
-	rootCmd.SetOut(bufVersion)
-	rootCmd.SetArgs([]string{"version"})
-	err := rootCmd.Execute()
+	cmdVersion := NewRootCmd(testBuildInfo())
+	cmdVersion.SetOut(bufVersion)
+	cmdVersion.SetArgs([]string{"version"})
+	err := cmdVersion.Execute()
 	require.NoError(t, err)
 	versionOutput := bufVersion.String()
 
 	// Run --show-version flag using a fresh command to avoid flag state issues
-	cmdFlag := NewRootCmd()
+	cmdFlag := NewRootCmd(testBuildInfo())
 	bufFlag := new(bytes.Buffer)
 	cmdFlag.SetOut(bufFlag)
 	cmdFlag.SetArgs([]string{"--show-version"})
@@ -43,17 +45,18 @@ func TestVersionCommand_MatchesFlag(t *testing.T) {
 	require.NoError(t, err)
 	flagOutput := bufFlag.String()
 
-	// Both should produce identical output (they use the same PrintVersionInfo function)
+	// Both should produce identical output (they use the same BuildInfo)
 	assert.Equal(t, versionOutput, flagOutput)
 }
 
 func TestVersionCommand_Help(t *testing.T) {
 	// Test that `bumpkin version --help` shows help text
 	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"version", "--help"})
+	cmd := NewRootCmd(testBuildInfo())
+	cmd.SetOut(buf)
+	cmd.SetArgs([]string{"version", "--help"})
 
-	err := rootCmd.Execute()
+	err := cmd.Execute()
 	require.NoError(t, err)
 
 	output := buf.String()

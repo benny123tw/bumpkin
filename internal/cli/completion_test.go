@@ -8,12 +8,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// testBuildInfo returns a BuildInfo for testing purposes
+func testBuildInfo() BuildInfo {
+	return BuildInfo{
+		Version:   "test",
+		Commit:    "abc1234",
+		Date:      "2024-01-01",
+		GoVersion: "go1.21",
+	}
+}
+
 func TestCompletionCommand_Help(t *testing.T) {
 	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"completion", "--help"})
+	cmd := NewRootCmd(testBuildInfo())
+	cmd.SetOut(buf)
+	cmd.SetArgs([]string{"completion", "--help"})
 
-	err := rootCmd.Execute()
+	err := cmd.Execute()
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -38,10 +49,11 @@ func TestCompletionCommand_Shells(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.shell+" help", func(t *testing.T) {
 			buf := new(bytes.Buffer)
-			rootCmd.SetOut(buf)
-			rootCmd.SetArgs([]string{"completion", tc.shell, "--help"})
+			cmd := NewRootCmd(testBuildInfo())
+			cmd.SetOut(buf)
+			cmd.SetArgs([]string{"completion", tc.shell, "--help"})
 
-			err := rootCmd.Execute()
+			err := cmd.Execute()
 			require.NoError(t, err)
 
 			output := buf.String()
@@ -53,8 +65,9 @@ func TestCompletionCommand_Shells(t *testing.T) {
 		t.Run(tc.shell+" executes", func(t *testing.T) {
 			// Note: Actual completion output goes to os.Stdout directly (Cobra built-in behavior)
 			// The commands are tested via execution without error
-			rootCmd.SetArgs([]string{"completion", tc.shell})
-			err := rootCmd.Execute()
+			cmd := NewRootCmd(testBuildInfo())
+			cmd.SetArgs([]string{"completion", tc.shell})
+			err := cmd.Execute()
 			require.NoError(t, err)
 		})
 	}
