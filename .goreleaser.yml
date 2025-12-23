@@ -23,9 +23,9 @@ builds:
       - -trimpath
     ldflags:
       - -s -w
-      - -X github.com/benny123tw/bumpkin/internal/cli.AppVersion={{.Version}}
-      - -X github.com/benny123tw/bumpkin/internal/cli.BuildDate={{.Date}}
-      - -X github.com/benny123tw/bumpkin/internal/cli.GitCommit={{.FullCommit}}
+      - -X main.version={{.Version}}
+      - -X main.commit={{.ShortCommit}}
+      - -X main.date={{.Date}}
     binary: >-
       {{ .ProjectName }}-
       {{- if .IsSnapshot }}{{ .Branch }}-
