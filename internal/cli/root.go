@@ -60,6 +60,7 @@ type rootCommand struct {
 	info BuildInfo
 }
 
+// newRootCommand constructs the root CLI command with the provided build info.
 func newRootCommand(info BuildInfo) *rootCommand {
 	c := &rootCommand{info: info}
 
@@ -86,11 +87,14 @@ Run without flags for interactive mode, or use flags for automation.`,
 	return c
 }
 
-// NewRootCmd creates a new root command instance (for testing)
+// NewRootCmd returns the root *cobra.Command configured for the application using the supplied BuildInfo.
+// It is intended for use in tests to obtain a fully wired command instance with flags, subcommands, and build metadata.
 func NewRootCmd(info BuildInfo) *cobra.Command {
 	return newRootCommand(info).cmd
 }
 
+// addFlags registers CLI flags on cmd for bump types, prerelease options, behavior/configuration, and output controls;
+// it also defines a hidden legacy `-v` alias for show-version.
 func addFlags(cmd *cobra.Command) {
 	// Bump type flags
 	cmd.Flags().BoolVar(&flagPatch, "patch", false, "Bump patch version (x.y.Z)")
@@ -368,6 +372,10 @@ func outputJSON(cmd *cobra.Command, result *executor.Result, err error) error {
 	return encoder.Encode(output)
 }
 
+// outputText writes a human-readable summary of a bump operation to the command's output.
+// It includes a dry-run marker when applicable, the previous and new versions, tag name,
+// short commit hash, whether a tag was created, push status (respecting --no-push and dry-run),
+// and any post-push hook warnings.
 func outputText(cmd *cobra.Command, result *executor.Result) error {
 	out := cmd.OutOrStdout()
 
@@ -408,7 +416,8 @@ func outputText(cmd *cobra.Command, result *executor.Result) error {
 	return nil
 }
 
-// Execute runs the root command with the provided build info
+// Execute runs the root CLI with the provided build information.
+// On failure, it writes the error to stderr and exits the process with the error's exit code.
 func Execute(info BuildInfo) {
 	c := newRootCommand(info)
 	if err := fang.Execute(context.Background(), c.cmd); err != nil {

@@ -27,6 +27,7 @@ type versionCommand struct {
 	info BuildInfo
 }
 
+// newVersionCommand creates a *versionCommand configured to print build metadata using the provided BuildInfo.
 func newVersionCommand(info BuildInfo) *versionCommand {
 	c := &versionCommand{info: info}
 
@@ -46,6 +47,8 @@ func (c *versionCommand) execute(cmd *cobra.Command, _ []string) error {
 	return printVersion(cmd.OutOrStdout(), c.info)
 }
 
+// printVersion writes the formatted build information from info to w.
+// It returns any error encountered while writing to the provided writer.
 func printVersion(w io.Writer, info BuildInfo) error {
 	_, err := fmt.Fprintln(w, info.String())
 	return err

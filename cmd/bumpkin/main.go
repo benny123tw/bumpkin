@@ -19,11 +19,13 @@ var (
 	date    = ""
 )
 
+// main is the program entry point. It constructs runtime build metadata via createBuildInfo and invokes cli.Execute with that metadata.
 func main() {
 	info := createBuildInfo()
 	cli.Execute(info)
 }
 
+// createBuildInfo returns version info from goreleaser variables or debug.ReadBuildInfo.
 func createBuildInfo() cli.BuildInfo {
 	info := cli.BuildInfo{
 		Commit:    commit,

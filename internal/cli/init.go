@@ -36,6 +36,10 @@ type initCommand struct {
 	cmd *cobra.Command
 }
 
+// newInitCommand constructs an initCommand with a Cobra command configured to create
+// a starter .bumpkin.yaml configuration file in the current directory.
+// The returned initCommand contains the prepared Cobra command accessible via its
+// cmd field.
 func newInitCommand() *initCommand {
 	c := &initCommand{}
 
