@@ -2,7 +2,7 @@
 
 ## Overview
 
-Bumpkin is a semantic version tagger CLI for git repositories, built with Go 1.24+ and BubbleTea TUI framework.
+Bumpkin is a semantic version tagger CLI for git repositories, built with Go 1.25+ and BubbleTea TUI framework.
 
 ## Project Structure
 
@@ -43,7 +43,7 @@ just dry-conventional  # Dry run with conventional commit analysis
 
 ## Code Style
 
-- Go 1.24+ with modern idioms (use `min`/`max`, `range over int`, `strings.Cut`)
+- Go 1.25+ with modern idioms (use `min`/`max`, `range over int`, `strings.Cut`)
 - Follow golangci-lint rules (see `.golangci.yml`)
 - Use BubbleTea patterns for TUI (tea.Model, tea.Cmd, tea.Msg)
 - Thread-safe buffers with sync.RWMutex for concurrent access
