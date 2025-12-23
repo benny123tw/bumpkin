@@ -3,6 +3,7 @@ package main
 import (
 	"cmp"
 	"fmt"
+	"regexp"
 	"runtime/debug"
 	"strings"
 
@@ -46,8 +47,8 @@ func createBuildInfo() cli.BuildInfo {
 	// For go install / go build, extract version from build info
 	info.Version = buildInfo.Main.Version
 
-	// Strip "v" prefix if present for cleaner display
-	if strings.HasPrefix(buildInfo.Main.Version, "v") {
+	// Strip "v" prefix only from proper semver versions (vX.Y.Z)
+	if matched, _ := regexp.MatchString(`v\d+\.\d+\.\d+`, buildInfo.Main.Version); matched {
 		info.Version = strings.TrimPrefix(buildInfo.Main.Version, "v")
 	}
 
