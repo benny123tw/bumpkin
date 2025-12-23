@@ -60,7 +60,7 @@ type rootCommand struct {
 	info BuildInfo
 }
 
-// runRoot method.
+// newRootCommand constructs the root CLI command with the provided build info.
 func newRootCommand(info BuildInfo) *rootCommand {
 	c := &rootCommand{info: info}
 

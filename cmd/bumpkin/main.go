@@ -25,12 +25,7 @@ func main() {
 	cli.Execute(info)
 }
 
-// createBuildInfo constructs a cli.BuildInfo populated from build-time variables and runtime module information.
-// It uses goreleaser build variables when available, otherwise extracts version info from debug.ReadBuildInfo.
-// It initializes the BuildInfo from package globals (commit, version, goVersion, date) and, when available,
-// enriches it with debug.ReadBuildInfo data: overrides GoVersion and, unless date is already set, derives Version
-// from the module main version (removing a leading "v" for semver `vX.Y.Z`), sets Date from VCS metadata (or
-// "(unknown)" if unavailable), and formats Commit as `(<revision or unknown>, modified: <modified or ?>, mod sum: "<module sum>")`.
+// createBuildInfo returns version info from goreleaser variables or debug.ReadBuildInfo.
 func createBuildInfo() cli.BuildInfo {
 	info := cli.BuildInfo{
 		Commit:    commit,
