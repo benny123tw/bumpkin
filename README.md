@@ -34,9 +34,6 @@ bumpkin version
 go install github.com/benny123tw/bumpkin/cmd/bumpkin@latest
 ```
 
-> **Note:** Binaries installed via `go install` won't display commit info in `bumpkin version`.
-> Use the install script for full version details.
-
 ### Build from Source
 
 ```bash
