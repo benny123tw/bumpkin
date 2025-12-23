@@ -10,21 +10,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestInitCommand(t *testing.T) {
-	// Create a temp directory for testing
+// withTempDir creates a temp directory, changes to it, and returns a cleanup function.
+func withTempDir(t *testing.T) (tmpDir string, cleanup func()) {
+	t.Helper()
+
 	tmpDir, err := os.MkdirTemp("", "bumpkin-init-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
 
-	// Change to temp directory
 	originalDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
 
 	err = os.Chdir(tmpDir)
 	require.NoError(t, err)
+
+	cleanup = func() {
+		_ = os.Chdir(originalDir)
+		os.RemoveAll(tmpDir)
+	}
+
+	return tmpDir, cleanup
+}
+
+func TestInitCommand(t *testing.T) {
+	tmpDir, cleanup := withTempDir(t)
+	defer cleanup()
 
 	// Run init command
 	buf := new(bytes.Buffer)
@@ -32,7 +41,7 @@ func TestInitCommand(t *testing.T) {
 	cmd.SetOut(buf)
 	cmd.SetArgs([]string{"init"})
 
-	err = cmd.Execute()
+	err := cmd.Execute()
 	require.NoError(t, err)
 
 	// Verify .bumpkin.yaml was created
@@ -48,69 +57,45 @@ func TestInitCommand(t *testing.T) {
 }
 
 func TestInitCommand_ConfigExists(t *testing.T) {
-	// Create a temp directory for testing
-	tmpDir, err := os.MkdirTemp("", "bumpkin-init-test")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	tests := []struct {
+		name           string
+		existingFile   string
+		expectedErrMsg string
+	}{
+		{
+			name:           "yaml extension",
+			existingFile:   ".bumpkin.yaml",
+			expectedErrMsg: "already exists",
+		},
+		{
+			name:           "yml extension",
+			existingFile:   ".bumpkin.yml",
+			expectedErrMsg: ".bumpkin.yml already exists",
+		},
+	}
 
-	// Change to temp directory
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir, cleanup := withTempDir(t)
+			defer cleanup()
 
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
+			// Create existing config file
+			configPath := filepath.Join(tmpDir, tt.existingFile)
+			//nolint:gosec // Test file, permissions don't matter
+			err := os.WriteFile(configPath, []byte("existing: true"), 0o644)
+			require.NoError(t, err)
 
-	// Create existing config file
-	configPath := filepath.Join(tmpDir, ".bumpkin.yaml")
-	//nolint:gosec // Test file, permissions don't matter
-	err = os.WriteFile(configPath, []byte("existing: true"), 0o644)
-	require.NoError(t, err)
+			// Run init command - should fail
+			buf := new(bytes.Buffer)
+			cmd := NewRootCmd(testBuildInfo())
+			cmd.SetOut(buf)
+			cmd.SetArgs([]string{"init"})
 
-	// Run init command - should fail
-	buf := new(bytes.Buffer)
-	cmd := NewRootCmd(testBuildInfo())
-	cmd.SetOut(buf)
-	cmd.SetArgs([]string{"init"})
-
-	err = cmd.Execute()
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "already exists")
-}
-
-func TestInitCommand_YmlExists(t *testing.T) {
-	// Create a temp directory for testing
-	tmpDir, err := os.MkdirTemp("", "bumpkin-init-test")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-
-	// Change to temp directory
-	originalDir, err := os.Getwd()
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Chdir(originalDir)
-	}()
-
-	err = os.Chdir(tmpDir)
-	require.NoError(t, err)
-
-	// Create existing .bumpkin.yml file (legacy extension)
-	configPath := filepath.Join(tmpDir, ".bumpkin.yml")
-	//nolint:gosec // Test file, permissions don't matter
-	err = os.WriteFile(configPath, []byte("existing: true"), 0o644)
-	require.NoError(t, err)
-
-	// Run init command - should fail because .yml exists
-	buf := new(bytes.Buffer)
-	cmd := NewRootCmd(testBuildInfo())
-	cmd.SetOut(buf)
-	cmd.SetArgs([]string{"init"})
-
-	err = cmd.Execute()
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), ".bumpkin.yml already exists")
+			err = cmd.Execute()
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.expectedErrMsg)
+		})
+	}
 }
 
 func TestInitCommand_Help(t *testing.T) {
