@@ -19,11 +19,17 @@ var (
 	date    = ""
 )
 
+// main is the program entry point. It constructs runtime build metadata via createBuildInfo and invokes cli.Execute with that metadata.
 func main() {
 	info := createBuildInfo()
 	cli.Execute(info)
 }
 
+// createBuildInfo constructs a cli.BuildInfo populated from build-time variables and runtime module information.
+// It initializes the BuildInfo from package globals (commit, version, goVersion, date) and, when available,
+// enriches it with debug.ReadBuildInfo data: overrides GoVersion and, unless date is already set, derives Version
+// from the module main version (removing a leading "v" for semver `vX.Y.Z`), sets Date from VCS metadata (or
+// "(unknown)" if unavailable), and formats Commit as `(<revision or unknown>, modified: <modified or ?>, mod sum: "<module sum>")`.
 func createBuildInfo() cli.BuildInfo {
 	info := cli.BuildInfo{
 		Commit:    commit,

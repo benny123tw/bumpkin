@@ -12,6 +12,8 @@ type currentCommand struct {
 	cmd *cobra.Command
 }
 
+// newCurrentCommand creates a *currentCommand containing a Cobra command that displays the latest semantic version tag.
+// The Cobra command is configured with usage "current", descriptive help text, and a "prefix" ("-p") flag defaulting to "v" for filtering tag prefixes.
 func newCurrentCommand() *currentCommand {
 	c := &currentCommand{}
 
