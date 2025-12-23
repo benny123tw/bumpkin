@@ -11,10 +11,11 @@ import (
 func TestHelpCommand(t *testing.T) {
 	// Test that `bumpkin help` works (Cobra built-in)
 	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"help"})
+	cmd := NewRootCmd(testBuildInfo())
+	cmd.SetOut(buf)
+	cmd.SetArgs([]string{"help"})
 
-	err := rootCmd.Execute()
+	err := cmd.Execute()
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -27,17 +28,19 @@ func TestHelpCommand_MatchesFlag(t *testing.T) {
 
 	// Run help subcommand
 	bufHelp := new(bytes.Buffer)
-	rootCmd.SetOut(bufHelp)
-	rootCmd.SetArgs([]string{"help"})
-	err := rootCmd.Execute()
+	cmdHelp := NewRootCmd(testBuildInfo())
+	cmdHelp.SetOut(bufHelp)
+	cmdHelp.SetArgs([]string{"help"})
+	err := cmdHelp.Execute()
 	require.NoError(t, err)
 	helpOutput := bufHelp.String()
 
 	// Run --help flag
 	bufFlag := new(bytes.Buffer)
-	rootCmd.SetOut(bufFlag)
-	rootCmd.SetArgs([]string{"--help"})
-	err = rootCmd.Execute()
+	cmdFlag := NewRootCmd(testBuildInfo())
+	cmdFlag.SetOut(bufFlag)
+	cmdFlag.SetArgs([]string{"--help"})
+	err = cmdFlag.Execute()
 	require.NoError(t, err)
 	flagOutput := bufFlag.String()
 
@@ -48,10 +51,11 @@ func TestHelpCommand_MatchesFlag(t *testing.T) {
 func TestHelpCommand_ForVersion(t *testing.T) {
 	// Test that `bumpkin help version` shows version command help
 	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"help", "version"})
+	cmd := NewRootCmd(testBuildInfo())
+	cmd.SetOut(buf)
+	cmd.SetArgs([]string{"help", "version"})
 
-	err := rootCmd.Execute()
+	err := cmd.Execute()
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -62,10 +66,11 @@ func TestHelpCommand_ForVersion(t *testing.T) {
 func TestHelpCommand_UnknownCommand(t *testing.T) {
 	// Test that `bumpkin help nonexistent` shows unknown topic message
 	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"help", "nonexistent"})
+	cmd := NewRootCmd(testBuildInfo())
+	cmd.SetOut(buf)
+	cmd.SetArgs([]string{"help", "nonexistent"})
 
-	err := rootCmd.Execute()
+	err := cmd.Execute()
 	// Cobra doesn't return an error, but shows "Unknown help topic"
 	require.NoError(t, err)
 

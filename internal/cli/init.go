@@ -32,35 +32,44 @@ hooks:
   #   - goreleaser release
 `
 
-var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Create a .bumpkin.yaml configuration file",
-	Long: `Create a .bumpkin.yaml configuration file with default settings.
+type initCommand struct {
+	cmd *cobra.Command
+}
+
+func newInitCommand() *initCommand {
+	c := &initCommand{}
+
+	initCmd := &cobra.Command{
+		Use:   "init",
+		Short: "Create a .bumpkin.yaml configuration file",
+		Long: `Create a .bumpkin.yaml configuration file with default settings.
 
 This command creates a starter configuration file in the current directory
 with sensible defaults and commented examples for hooks.`,
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		const defaultConfigFile = ".bumpkin.yaml"
-		configFiles := []string{defaultConfigFile, ".bumpkin.yml"}
+		RunE: c.execute,
+	}
 
-		// Check if config already exists
-		for _, f := range configFiles {
-			if _, err := os.Stat(f); err == nil {
-				return fmt.Errorf("%s already exists", f)
-			}
-		}
-
-		// Write config file
-		//nolint:gosec // Config file needs to be readable by user
-		if err := os.WriteFile(defaultConfigFile, []byte(configTemplate), 0o644); err != nil {
-			return fmt.Errorf("failed to create %s: %w", defaultConfigFile, err)
-		}
-
-		fmt.Fprintf(cmd.OutOrStdout(), "Created %s\n", defaultConfigFile)
-		return nil
-	},
+	c.cmd = initCmd
+	return c
 }
 
-func init() {
-	rootCmd.AddCommand(initCmd)
+func (c *initCommand) execute(cmd *cobra.Command, _ []string) error {
+	const defaultConfigFile = ".bumpkin.yaml"
+	configFiles := []string{defaultConfigFile, ".bumpkin.yml"}
+
+	// Check if config already exists
+	for _, f := range configFiles {
+		if _, err := os.Stat(f); err == nil {
+			return fmt.Errorf("%s already exists", f)
+		}
+	}
+
+	// Write config file
+	//nolint:gosec // Config file needs to be readable by user
+	if err := os.WriteFile(defaultConfigFile, []byte(configTemplate), 0o644); err != nil {
+		return fmt.Errorf("failed to create %s: %w", defaultConfigFile, err)
+	}
+
+	fmt.Fprintf(cmd.OutOrStdout(), "Created %s\n", defaultConfigFile)
+	return nil
 }

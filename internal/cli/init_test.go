@@ -28,10 +28,11 @@ func TestInitCommand(t *testing.T) {
 
 	// Run init command
 	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"init"})
+	cmd := NewRootCmd(testBuildInfo())
+	cmd.SetOut(buf)
+	cmd.SetArgs([]string{"init"})
 
-	err = rootCmd.Execute()
+	err = cmd.Execute()
 	require.NoError(t, err)
 
 	// Verify .bumpkin.yaml was created
@@ -70,10 +71,11 @@ func TestInitCommand_ConfigExists(t *testing.T) {
 
 	// Run init command - should fail
 	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"init"})
+	cmd := NewRootCmd(testBuildInfo())
+	cmd.SetOut(buf)
+	cmd.SetArgs([]string{"init"})
 
-	err = rootCmd.Execute()
+	err = cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "already exists")
 }
@@ -102,20 +104,22 @@ func TestInitCommand_YmlExists(t *testing.T) {
 
 	// Run init command - should fail because .yml exists
 	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"init"})
+	cmd := NewRootCmd(testBuildInfo())
+	cmd.SetOut(buf)
+	cmd.SetArgs([]string{"init"})
 
-	err = rootCmd.Execute()
+	err = cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), ".bumpkin.yml already exists")
 }
 
 func TestInitCommand_Help(t *testing.T) {
 	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"init", "--help"})
+	cmd := NewRootCmd(testBuildInfo())
+	cmd.SetOut(buf)
+	cmd.SetArgs([]string{"init", "--help"})
 
-	err := rootCmd.Execute()
+	err := cmd.Execute()
 	require.NoError(t, err)
 
 	output := buf.String()

@@ -7,17 +7,17 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCurrentCommand_Help(t *testing.T) {
 	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"current", "--help"})
+	cmd := NewRootCmd(testBuildInfo())
+	cmd.SetOut(buf)
+	cmd.SetArgs([]string{"current", "--help"})
 
-	err := rootCmd.Execute()
+	err := cmd.Execute()
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -27,10 +27,11 @@ func TestCurrentCommand_Help(t *testing.T) {
 
 func TestCurrentCommand_HasPrefixFlag(t *testing.T) {
 	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"current", "--help"})
+	cmd := NewRootCmd(testBuildInfo())
+	cmd.SetOut(buf)
+	cmd.SetArgs([]string{"current", "--help"})
 
-	err := rootCmd.Execute()
+	err := cmd.Execute()
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -41,10 +42,11 @@ func TestCurrentCommand_HasPrefixFlag(t *testing.T) {
 func TestCurrentCommand_InGitRepo(t *testing.T) {
 	// This test runs in the bumpkin repo which has tags
 	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetArgs([]string{"current"})
+	cmd := NewRootCmd(testBuildInfo())
+	cmd.SetOut(buf)
+	cmd.SetArgs([]string{"current"})
 
-	err := rootCmd.Execute()
+	err := cmd.Execute()
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -68,8 +70,10 @@ func TestCurrentCommand_NotGitRepo(t *testing.T) {
 	err = os.Chdir(tmpDir)
 	require.NoError(t, err)
 
-	// Test runCurrent directly to avoid rootCmd state issues
-	err = runCurrent(rootCmd, nil)
+	// Test via command execution
+	cmd := NewRootCmd(testBuildInfo())
+	cmd.SetArgs([]string{"current"})
+	err = cmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not a git repository")
 }
@@ -92,30 +96,31 @@ func TestCurrentCommand_NoTags(t *testing.T) {
 
 	// Initialize a git repo with a commit but no tags
 	ctx := context.Background()
-	cmd := exec.CommandContext(ctx, "git", "init")
-	require.NoError(t, cmd.Run())
+	gitCmd := exec.CommandContext(ctx, "git", "init")
+	require.NoError(t, gitCmd.Run())
 
-	cmd = exec.CommandContext(ctx, "git", "config", "user.email", "test@test.com")
-	require.NoError(t, cmd.Run())
+	gitCmd = exec.CommandContext(ctx, "git", "config", "user.email", "test@test.com")
+	require.NoError(t, gitCmd.Run())
 
-	cmd = exec.CommandContext(ctx, "git", "config", "user.name", "Test")
-	require.NoError(t, cmd.Run())
+	gitCmd = exec.CommandContext(ctx, "git", "config", "user.name", "Test")
+	require.NoError(t, gitCmd.Run())
 
 	// Create a file and commit it
 	require.NoError(t, os.WriteFile("test.txt", []byte("test"), 0o600))
 
-	cmd = exec.CommandContext(ctx, "git", "add", ".")
-	require.NoError(t, cmd.Run())
+	gitCmd = exec.CommandContext(ctx, "git", "add", ".")
+	require.NoError(t, gitCmd.Run())
 
-	cmd = exec.CommandContext(ctx, "git", "commit", "-m", "initial")
-	require.NoError(t, cmd.Run())
+	gitCmd = exec.CommandContext(ctx, "git", "commit", "-m", "initial")
+	require.NoError(t, gitCmd.Run())
 
-	// Test runCurrent directly - should report no tags found
+	// Test via command execution - should report no tags found
 	buf := new(bytes.Buffer)
-	testCmd := &cobra.Command{}
-	testCmd.SetOut(buf)
+	cmd := NewRootCmd(testBuildInfo())
+	cmd.SetOut(buf)
+	cmd.SetArgs([]string{"current"})
 
-	err = runCurrent(testCmd, nil)
+	err = cmd.Execute()
 	require.NoError(t, err)
 
 	output := buf.String()

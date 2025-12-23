@@ -9,7 +9,7 @@ import (
 
 // T054: Test for --patch flag
 func TestFlags_Patch(t *testing.T) {
-	cmd := NewRootCmd()
+	cmd := NewRootCmd(testBuildInfo())
 	cmd.SetArgs([]string{"--patch"})
 
 	err := cmd.ParseFlags([]string{"--patch"})
@@ -22,7 +22,7 @@ func TestFlags_Patch(t *testing.T) {
 
 // T055: Test for --minor flag
 func TestFlags_Minor(t *testing.T) {
-	cmd := NewRootCmd()
+	cmd := NewRootCmd(testBuildInfo())
 	cmd.SetArgs([]string{"--minor"})
 
 	err := cmd.ParseFlags([]string{"--minor"})
@@ -35,7 +35,7 @@ func TestFlags_Minor(t *testing.T) {
 
 // T056: Test for --major flag
 func TestFlags_Major(t *testing.T) {
-	cmd := NewRootCmd()
+	cmd := NewRootCmd(testBuildInfo())
 	cmd.SetArgs([]string{"--major"})
 
 	err := cmd.ParseFlags([]string{"--major"})
@@ -48,7 +48,7 @@ func TestFlags_Major(t *testing.T) {
 
 // T057: Test for --version custom flag
 func TestFlags_CustomVersion(t *testing.T) {
-	cmd := NewRootCmd()
+	cmd := NewRootCmd(testBuildInfo())
 	cmd.SetArgs([]string{"--set-version", "2.0.0"})
 
 	err := cmd.ParseFlags([]string{"--set-version", "2.0.0"})
@@ -61,7 +61,7 @@ func TestFlags_CustomVersion(t *testing.T) {
 
 // T059: Test for --dry-run flag
 func TestFlags_DryRun(t *testing.T) {
-	cmd := NewRootCmd()
+	cmd := NewRootCmd(testBuildInfo())
 	cmd.SetArgs([]string{"--dry-run"})
 
 	err := cmd.ParseFlags([]string{"--dry-run"})
@@ -74,7 +74,7 @@ func TestFlags_DryRun(t *testing.T) {
 
 // T060: Test for --no-push flag
 func TestFlags_NoPush(t *testing.T) {
-	cmd := NewRootCmd()
+	cmd := NewRootCmd(testBuildInfo())
 	cmd.SetArgs([]string{"--no-push"})
 
 	err := cmd.ParseFlags([]string{"--no-push"})
@@ -87,7 +87,7 @@ func TestFlags_NoPush(t *testing.T) {
 
 // T061: Test for --yes flag
 func TestFlags_Yes(t *testing.T) {
-	cmd := NewRootCmd()
+	cmd := NewRootCmd(testBuildInfo())
 	cmd.SetArgs([]string{"--yes"})
 
 	err := cmd.ParseFlags([]string{"--yes"})
@@ -100,7 +100,7 @@ func TestFlags_Yes(t *testing.T) {
 
 // T063: Test for --json output flag
 func TestFlags_JSON(t *testing.T) {
-	cmd := NewRootCmd()
+	cmd := NewRootCmd(testBuildInfo())
 	cmd.SetArgs([]string{"--json"})
 
 	err := cmd.ParseFlags([]string{"--json"})
@@ -113,7 +113,7 @@ func TestFlags_JSON(t *testing.T) {
 
 // T123: Test for --remote flag
 func TestFlags_Remote(t *testing.T) {
-	cmd := NewRootCmd()
+	cmd := NewRootCmd(testBuildInfo())
 	cmd.SetArgs([]string{"--remote", "upstream"})
 
 	err := cmd.ParseFlags([]string{"--remote", "upstream"})
@@ -126,7 +126,7 @@ func TestFlags_Remote(t *testing.T) {
 
 // T124: Test for --prefix flag
 func TestFlags_Prefix(t *testing.T) {
-	cmd := NewRootCmd()
+	cmd := NewRootCmd(testBuildInfo())
 	cmd.SetArgs([]string{"--prefix", "release-"})
 
 	err := cmd.ParseFlags([]string{"--prefix", "release-"})
@@ -153,7 +153,7 @@ func TestFlags_MutualExclusivity(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// These combinations should be flagged as errors during validation
 			// The actual validation happens in the command execution
-			cmd := NewRootCmd()
+			cmd := NewRootCmd(testBuildInfo())
 			err := cmd.ParseFlags(tt.args)
 			require.NoError(t, err) // Parsing succeeds, validation happens in RunE
 		})
@@ -187,7 +187,7 @@ func TestCountTrueFlags(t *testing.T) {
 
 // Test default values
 func TestFlags_Defaults(t *testing.T) {
-	cmd := NewRootCmd()
+	cmd := NewRootCmd(testBuildInfo())
 	cmd.SetArgs([]string{})
 	err := cmd.ParseFlags([]string{})
 	require.NoError(t, err)
