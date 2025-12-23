@@ -13,11 +13,31 @@ A semantic version tagger CLI for git repositories. Inspired by [antfu/bumpp](ht
 
 ## Installation
 
+### Install Script (Recommended)
+
+```bash
+# binary will be $(go env GOPATH)/bin/bumpkin
+curl -sSfL https://raw.githubusercontent.com/benny123tw/bumpkin/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin
+
+# or install it into ./bin/
+curl -sSfL https://raw.githubusercontent.com/benny123tw/bumpkin/HEAD/install.sh | sh -s
+
+# In Alpine Linux (as it does not come with curl by default)
+wget -O- -nv https://raw.githubusercontent.com/benny123tw/bumpkin/HEAD/install.sh | sh -s
+
+bumpkin version
+```
+
+### Go Install
+
 ```bash
 go install github.com/benny123tw/bumpkin/cmd/bumpkin@latest
 ```
 
-Or build from source:
+> **Note:** Binaries installed via `go install` won't display commit info in `bumpkin version`.
+> Use the install script for full version details.
+
+### Build from Source
 
 ```bash
 git clone https://github.com/benny123tw/bumpkin.git
