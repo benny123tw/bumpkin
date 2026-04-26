@@ -666,9 +666,9 @@ func (m Model) View() string {
 func (m Model) renderVersionSelectView() string {
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("Current version: %s\n\n",
+	fmt.Fprintf(&sb, "Current version: %s\n\n",
 		CurrentVersionStyle.Render(m.currentVersion.StringWithPrefix(m.config.Prefix)),
-	))
+	)
 
 	// Dual-pane layout: commits pane (top) + version pane (bottom)
 
@@ -733,7 +733,7 @@ func (m Model) renderCustomInputView() string {
 
 	sb.WriteString(SubtitleStyle.Render("Enter custom version:"))
 	sb.WriteString("\n\n")
-	sb.WriteString(fmt.Sprintf("  %s%s\n", m.config.Prefix, m.customInput.View()))
+	fmt.Fprintf(&sb, "  %s%s\n", m.config.Prefix, m.customInput.View())
 
 	if m.err != nil {
 		sb.WriteString("\n")
@@ -880,7 +880,13 @@ func (m *Model) startNextHook() tea.Cmd {
 		DryRun:          m.config.DryRun,
 	}
 
-	// Create cancellable context for hook execution
+	// Tear down any previous hook's context before starting a new one — the
+	// cancel func is otherwise leaked when hooks complete normally and the
+	// field is overwritten on the next call.
+	if m.hookCancelFunc != nil {
+		m.hookCancelFunc()
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	m.hookCancelFunc = cancel
 
