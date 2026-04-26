@@ -880,9 +880,7 @@ func (m *Model) startNextHook() tea.Cmd {
 		DryRun:          m.config.DryRun,
 	}
 
-	// Tear down any previous hook's context before starting a new one — the
-	// cancel func is otherwise leaked when hooks complete normally and the
-	// field is overwritten on the next call.
+	// Call previous cancel before overwriting — hooks completing normally don't cancel their own context.
 	if m.hookCancelFunc != nil {
 		m.hookCancelFunc()
 	}
