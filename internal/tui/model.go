@@ -269,6 +269,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case HookCompleteMsg:
+		m.clearHookCancel()
 		if !msg.Success {
 			// For post-push hooks, we use fail-open (warnings, not errors)
 			if m.hookPhase == hooks.PostPush {
@@ -335,9 +336,7 @@ func (m Model) handleCtrlC() (tea.Model, tea.Cmd) {
 		// Check if this is second ctrl+c within 3 seconds
 		if m.cancelPending && time.Since(m.cancelPendingTime) < 3*time.Second {
 			// Cancel the hook
-			if m.hookCancelFunc != nil {
-				m.hookCancelFunc()
-			}
+			m.clearHookCancel()
 			m.cancelPending = false
 			m.err = fmt.Errorf("hook cancelled by user")
 			m.state = StateError
@@ -880,11 +879,6 @@ func (m *Model) startNextHook() tea.Cmd {
 		DryRun:          m.config.DryRun,
 	}
 
-	// Call previous cancel before overwriting — hooks completing normally don't cancel their own context.
-	if m.hookCancelFunc != nil {
-		m.hookCancelFunc()
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	m.hookCancelFunc = cancel
 
@@ -904,6 +898,15 @@ func (m *Model) startNextHook() tea.Cmd {
 		waitForHookLine(lineChan),
 		waitForHookDone(doneChan),
 	)
+}
+
+// clearHookCancel cancels and clears the current hook's cancel func, if any.
+// Safe to call multiple times.
+func (m *Model) clearHookCancel() {
+	if m.hookCancelFunc != nil {
+		m.hookCancelFunc()
+		m.hookCancelFunc = nil
+	}
 }
 
 // continueExecution proceeds with the execution after hooks complete

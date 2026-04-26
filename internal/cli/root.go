@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"syscall"
 
 	"github.com/charmbracelet/fang"
 	"github.com/spf13/cobra"
@@ -44,15 +45,16 @@ var (
 
 // JSONOutput represents the JSON output format for non-interactive mode
 type JSONOutput struct {
-	Success         bool   `json:"success"`
-	PreviousVersion string `json:"previous_version"`
-	NewVersion      string `json:"new_version"`
-	TagName         string `json:"tag_name"`
-	CommitHash      string `json:"commit_hash"`
-	TagCreated      bool   `json:"tag_created"`
-	Pushed          bool   `json:"pushed"`
-	DryRun          bool   `json:"dry_run"`
-	Error           string `json:"error,omitempty"`
+	Success          bool     `json:"success"`
+	PreviousVersion  string   `json:"previous_version"`
+	NewVersion       string   `json:"new_version"`
+	TagName          string   `json:"tag_name"`
+	CommitHash       string   `json:"commit_hash"`
+	TagCreated       bool     `json:"tag_created"`
+	Pushed           bool     `json:"pushed"`
+	DryRun           bool     `json:"dry_run"`
+	PostPushWarnings []string `json:"post_push_warnings,omitempty"`
+	Error            string   `json:"error,omitempty"`
 }
 
 type rootCommand struct {
@@ -310,7 +312,7 @@ func runNonInteractive(cmd *cobra.Command, repo *git.Repository, cfg *config.Con
 		PostPushHooks: cfg.Hooks.PostPush,
 	}
 
-	result, err := executor.Execute(context.Background(), req)
+	result, err := executor.Execute(cmd.Context(), req)
 	if err != nil {
 		return handleError(cmd, err, "bump failed")
 	}
@@ -369,6 +371,7 @@ func outputJSON(cmd *cobra.Command, result *executor.Result, err error) error {
 		output.CommitHash = result.CommitHash
 		output.TagCreated = result.TagCreated
 		output.Pushed = result.Pushed
+		output.PostPushWarnings = result.PostPushWarnings
 	}
 
 	encoder := json.NewEncoder(cmd.OutOrStdout())
@@ -424,7 +427,12 @@ func outputText(cmd *cobra.Command, result *executor.Result) error {
 // On failure, it writes the error to stderr and exits the process with the error's exit code.
 func Execute(info BuildInfo) {
 	c := newRootCommand(info)
-	if err := fang.Execute(context.Background(), c.cmd); err != nil {
+	err := fang.Execute(
+		context.Background(),
+		c.cmd,
+		fang.WithNotifySignal(os.Interrupt, syscall.SIGTERM),
+	)
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(GetExitCode(err))
 	}
