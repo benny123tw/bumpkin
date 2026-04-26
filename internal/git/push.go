@@ -1,16 +1,23 @@
 package git
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"os/exec"
+	"strings"
 
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
-// PushTag pushes a specific tag to the remote repository
-func (r *Repository) PushTag(tagName, remoteName string) error {
-	// Check if remote exists
+// PushTag pushes a specific tag to the remote repository.
+//
+// This shells out to the system `git` binary instead of using go-git's
+// in-process Push so that the user's git config is honored — insteadOf
+// URL rewrites, http.sslVerify, http.proxy, credential helpers, and SSH
+// keys. go-git does not read any of those on its own, which breaks pushes
+// to enterprise hosts that rely on them.
+func (r *Repository) PushTag(ctx context.Context, tagName, remoteName string) error {
 	hasRemote, err := r.HasRemote(remoteName)
 	if err != nil {
 		return err
@@ -19,36 +26,29 @@ func (r *Repository) PushTag(tagName, remoteName string) error {
 		return fmt.Errorf("remote %q not found", remoteName)
 	}
 
-	// Check if tag exists locally
-	tagRef, err := r.repo.Tag(tagName)
-	if err != nil {
+	if _, err := r.repo.Tag(tagName); err != nil {
 		return fmt.Errorf("tag %q not found: %w", tagName, err)
 	}
 
-	// Create refspec for the tag
-	refSpec := config.RefSpec(fmt.Sprintf(
-		"refs/tags/%s:refs/tags/%s",
-		tagRef.Name().Short(),
-		tagRef.Name().Short(),
-	))
-
-	// Push the tag
-	err = r.repo.Push(&git.PushOptions{
-		RemoteName: remoteName,
-		RefSpecs:   []config.RefSpec{refSpec},
-	})
+	refSpec := "refs/tags/" + tagName + ":refs/tags/" + tagName
+	cmd := exec.CommandContext(ctx, "git", "push", remoteName, refSpec)
+	cmd.Dir = r.Path
+	// Force non-interactive: rely on credential helpers / SSH agent / tokens.
+	// Without this, git can hang on a credential prompt when run from the TUI.
+	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		if err == git.NoErrAlreadyUpToDate {
-			return nil // Tag already exists on remote
-		}
-		return fmt.Errorf("failed to push tag: %w", err)
+		return fmt.Errorf(
+			"failed to push tag: %w: %s",
+			err, strings.TrimSpace(string(out)),
+		)
 	}
-
 	return nil
 }
 
-// PushAllTags pushes all tags to the remote repository
-func (r *Repository) PushAllTags(remoteName string) error {
+// PushAllTags pushes all tags to the remote repository.
+// Shells out to `git push --tags` for the same reasons as PushTag.
+func (r *Repository) PushAllTags(ctx context.Context, remoteName string) error {
 	hasRemote, err := r.HasRemote(remoteName)
 	if err != nil {
 		return err
@@ -57,17 +57,16 @@ func (r *Repository) PushAllTags(remoteName string) error {
 		return fmt.Errorf("remote %q not found", remoteName)
 	}
 
-	err = r.repo.Push(&git.PushOptions{
-		RemoteName: remoteName,
-		RefSpecs:   []config.RefSpec{"refs/tags/*:refs/tags/*"},
-	})
+	cmd := exec.CommandContext(ctx, "git", "push", remoteName, "--tags")
+	cmd.Dir = r.Path
+	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		if err == git.NoErrAlreadyUpToDate {
-			return nil
-		}
-		return fmt.Errorf("failed to push tags: %w", err)
+		return fmt.Errorf(
+			"failed to push tags: %w: %s",
+			err, strings.TrimSpace(string(out)),
+		)
 	}
-
 	return nil
 }
 

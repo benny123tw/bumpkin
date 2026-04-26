@@ -158,7 +158,11 @@ func (c *rootCommand) runRoot(cmd *cobra.Command, _ []string) error {
 		cfg, cfgErr = config.Load(cwd)
 		if cfgErr != nil {
 			// Auto-discovered config failed to load; warn and use defaults
-			fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to load config: %v (using defaults)\n", cfgErr)
+			fmt.Fprintf(
+				cmd.ErrOrStderr(),
+				"Warning: failed to load config: %v (using defaults)\n",
+				cfgErr,
+			)
 			cfg = config.Default()
 		}
 	}

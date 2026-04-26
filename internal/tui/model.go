@@ -1054,7 +1054,7 @@ func (m Model) doPushAndPostPush() tea.Msg {
 	}
 
 	// Push the tag
-	err := m.config.Repository.PushTag(m.newVersion, m.config.Remote)
+	err := m.config.Repository.PushTag(context.Background(), m.newVersion, m.config.Remote)
 	if err != nil {
 		return ErrorMsg{Err: fmt.Errorf("failed to push tag: %w", err)}
 	}
