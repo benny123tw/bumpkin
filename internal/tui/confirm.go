@@ -23,18 +23,18 @@ func RenderConfirmation(
 	sb.WriteString("\n\n")
 
 	// Summary
-	sb.WriteString(fmt.Sprintf("  Version: %s %s %s\n",
+	fmt.Fprintf(&sb, "  Version: %s %s %s\n",
 		CurrentVersionStyle.Render(prevVersion),
 		IconArrow,
 		NewVersionStyle.Render(newVersion),
-	))
-	sb.WriteString(fmt.Sprintf("  Tag:     %s\n", NewVersionStyle.Render(tagName)))
-	sb.WriteString(fmt.Sprintf("  Commits: %d\n", commitCount))
+	)
+	fmt.Fprintf(&sb, "  Tag:     %s\n", NewVersionStyle.Render(tagName))
+	fmt.Fprintf(&sb, "  Commits: %d\n", commitCount)
 
 	if noPush {
-		sb.WriteString(fmt.Sprintf("  Push:    %s\n", WarningStyle.Render("disabled (--no-push)")))
+		fmt.Fprintf(&sb, "  Push:    %s\n", WarningStyle.Render("disabled (--no-push)"))
 	} else {
-		sb.WriteString(fmt.Sprintf("  Remote:  %s\n", remoteName))
+		fmt.Fprintf(&sb, "  Remote:  %s\n", remoteName)
 	}
 
 	if dryRun {
@@ -50,11 +50,11 @@ func RenderConfirmation(
 	cancelLabel := "No, cancel"
 
 	if selected == 0 {
-		sb.WriteString(fmt.Sprintf("  %s %s\n", IconSelected, SelectedStyle.Render(confirmLabel)))
-		sb.WriteString(fmt.Sprintf("    %s\n", UnselectedStyle.Render(cancelLabel)))
+		fmt.Fprintf(&sb, "  %s %s\n", IconSelected, SelectedStyle.Render(confirmLabel))
+		fmt.Fprintf(&sb, "    %s\n", UnselectedStyle.Render(cancelLabel))
 	} else {
-		sb.WriteString(fmt.Sprintf("    %s\n", UnselectedStyle.Render(confirmLabel)))
-		sb.WriteString(fmt.Sprintf("  %s %s\n", IconSelected, SelectedStyle.Render(cancelLabel)))
+		fmt.Fprintf(&sb, "    %s\n", UnselectedStyle.Render(confirmLabel))
+		fmt.Fprintf(&sb, "  %s %s\n", IconSelected, SelectedStyle.Render(cancelLabel))
 	}
 
 	return sb.String()
@@ -67,15 +67,13 @@ func RenderSuccess(result *ExecutionSummary) string {
 	sb.WriteString(SuccessStyle.Render(fmt.Sprintf("%s Success!", IconCheck)))
 	sb.WriteString("\n\n")
 
-	sb.WriteString(fmt.Sprintf("  Created tag: %s\n", NewVersionStyle.Render(result.TagName)))
-	sb.WriteString(
-		fmt.Sprintf("  Commit:      %s\n", CommitHashStyle.Render(result.CommitHash[:7])),
-	)
+	fmt.Fprintf(&sb, "  Created tag: %s\n", NewVersionStyle.Render(result.TagName))
+	fmt.Fprintf(&sb, "  Commit:      %s\n", CommitHashStyle.Render(result.CommitHash[:7]))
 
 	if result.Pushed {
-		sb.WriteString(fmt.Sprintf("  Pushed to:   %s\n", result.Remote))
+		fmt.Fprintf(&sb, "  Pushed to:   %s\n", result.Remote)
 	} else {
-		sb.WriteString(fmt.Sprintf("  Push:        %s\n", WarningStyle.Render("skipped")))
+		fmt.Fprintf(&sb, "  Push:        %s\n", WarningStyle.Render("skipped"))
 	}
 
 	// Display post-push hook warnings if any
@@ -84,7 +82,7 @@ func RenderSuccess(result *ExecutionSummary) string {
 		sb.WriteString(WarningStyle.Render("  Post-push hook warnings:"))
 		sb.WriteString("\n")
 		for _, warning := range result.PostPushWarnings {
-			sb.WriteString(fmt.Sprintf("    %s %s\n", IconCross, warning))
+			fmt.Fprintf(&sb, "    %s %s\n", IconCross, warning)
 		}
 	}
 
@@ -100,7 +98,7 @@ func RenderError(err error) string {
 
 	sb.WriteString(ErrorStyle.Render(fmt.Sprintf("%s Error", IconCross)))
 	sb.WriteString("\n\n")
-	sb.WriteString(fmt.Sprintf("  %s\n", err.Error()))
+	fmt.Fprintf(&sb, "  %s\n", err.Error())
 	sb.WriteString("\n")
 	sb.WriteString(HelpStyle.Render("Press any key to exit"))
 
