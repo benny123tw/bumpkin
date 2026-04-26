@@ -3,6 +3,7 @@ package git
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -32,6 +33,9 @@ func (r *Repository) PushTag(ctx context.Context, tagName, remoteName string) er
 	refSpec := "refs/tags/" + tagName + ":refs/tags/" + tagName
 	cmd := exec.CommandContext(ctx, "git", "push", remoteName, refSpec)
 	cmd.Dir = r.Path
+	// Force non-interactive: rely on credential helpers / SSH agent / tokens.
+	// Without this, git can hang on a credential prompt when run from the TUI.
+	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf(
@@ -55,6 +59,7 @@ func (r *Repository) PushAllTags(ctx context.Context, remoteName string) error {
 
 	cmd := exec.CommandContext(ctx, "git", "push", remoteName, "--tags")
 	cmd.Dir = r.Path
+	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf(

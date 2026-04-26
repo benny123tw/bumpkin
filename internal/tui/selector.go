@@ -116,7 +116,8 @@ func createPrereleaseOptions(current version.Version, prefix string) []VersionOp
 			Label:       "alpha",
 			Description: "Start new alpha prerelease",
 			BumpType:    version.BumpPrereleaseAlpha,
-			NewVersion:  version.Bump(current, version.BumpPrereleaseAlpha).StringWithPrefix(prefix),
+			NewVersion: version.Bump(current, version.BumpPrereleaseAlpha).
+				StringWithPrefix(prefix),
 		})
 	}
 
