@@ -140,7 +140,7 @@ func Execute(ctx context.Context, req Request) (*Result, error) {
 		}
 
 		if hasRemote {
-			if err := req.Repository.PushTag(tagName, req.Remote); err != nil {
+			if err := req.Repository.PushTag(ctx, tagName, req.Remote); err != nil {
 				return result, fmt.Errorf("failed to push tag: %w", err)
 			}
 			result.Pushed = true

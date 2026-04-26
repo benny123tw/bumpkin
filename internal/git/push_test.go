@@ -37,7 +37,7 @@ func TestRepository_PushTag(t *testing.T) {
 	require.NoError(t, err)
 
 	// Push the tag
-	err = repo.PushTag("v1.0.0", "origin")
+	err = repo.PushTag(t.Context(), "v1.0.0", "origin")
 	require.NoError(t, err)
 
 	// Verify tag exists in remote by cloning to a new location
@@ -69,7 +69,7 @@ func TestRepository_PushTag_NoRemote(t *testing.T) {
 	require.NoError(t, err)
 
 	// Try to push without a remote configured
-	err = repo.PushTag("v1.0.0", "origin")
+	err = repo.PushTag(t.Context(), "v1.0.0", "origin")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "remote")
 }
@@ -87,7 +87,7 @@ func TestRepository_PushTag_TagNotFound(t *testing.T) {
 	require.NoError(t, err)
 
 	// Try to push a tag that doesn't exist
-	err = repo.PushTag("v999.0.0", "origin")
+	err = repo.PushTag(t.Context(), "v999.0.0", "origin")
 	assert.Error(t, err)
 }
 
