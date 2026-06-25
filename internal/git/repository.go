@@ -28,7 +28,7 @@ type Repository struct {
 func Open(path string) (*Repository, error) {
 	repo, root, err := openPlain(path, false)
 	if err != nil {
-		if err == gogit.ErrRepositoryNotExists {
+		if errors.Is(err, gogit.ErrRepositoryNotExists) {
 			return nil, fmt.Errorf("not a git repository: %s", path)
 		}
 		return nil, fmt.Errorf("failed to open repository: %w", err)
@@ -45,7 +45,7 @@ func Open(path string) (*Repository, error) {
 func OpenFromCurrent() (*Repository, error) {
 	repo, root, err := openPlain(".", true)
 	if err != nil {
-		if err == gogit.ErrRepositoryNotExists {
+		if errors.Is(err, gogit.ErrRepositoryNotExists) {
 			return nil, fmt.Errorf("not a git repository (or any of the parent directories)")
 		}
 		return nil, fmt.Errorf("failed to open repository: %w", err)
@@ -64,7 +64,8 @@ func (r *Repository) Raw() *gogit.Repository {
 
 func openPlain(path string, detectDotGit bool) (*gogit.Repository, string, error) {
 	repo, err := gogit.PlainOpenWithOptions(path, &gogit.PlainOpenOptions{
-		DetectDotGit: detectDotGit,
+		DetectDotGit:          detectDotGit,
+		EnableDotGitCommonDir: true,
 	})
 	if err == nil {
 		root, rootErr := repositoryRoot(repo)
@@ -151,11 +152,13 @@ func resolveGitDir(path string, detectDotGit bool) (billy.Filesystem, billy.File
 		return nil, nil, err
 	}
 
-	for {
-		if info, statErr := os.Stat(path); statErr == nil && !info.IsDir() && detectDotGit {
-			path = filepath.Dir(path)
-		}
+	// If detecting and the entry point is a file, start from its directory.
+	// Every parent reached by the walk below is already a directory.
+	if info, statErr := os.Stat(path); statErr == nil && !info.IsDir() && detectDotGit {
+		path = filepath.Dir(path)
+	}
 
+	for {
 		worktree := osfs.New(path)
 		gitPath := filepath.Join(path, ".git")
 		info, statErr := os.Stat(gitPath)
