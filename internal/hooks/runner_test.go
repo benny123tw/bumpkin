@@ -1,4 +1,3 @@
-//nolint:goconst // "windows" string used for OS-specific test logic
 package hooks
 
 import (
