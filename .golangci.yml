@@ -26,6 +26,11 @@ linters:
     - whitespace
     - copyloopvar
     - predeclared
+  settings:
+    goconst:
+      # Table-driven tests repeat literal data by nature; flagging it as a
+      # missing constant is pure noise.
+      ignore-tests: true
   exclusions:
     generated: lax
     presets:

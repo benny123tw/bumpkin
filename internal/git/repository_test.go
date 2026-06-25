@@ -76,6 +76,46 @@ func initGitRepo(t *testing.T, dir string) {
 	require.NoError(t, os.WriteFile(filepath.Join(gitDir, "config"), []byte(configContent), 0o644))
 }
 
+// TestRepository_Open_WorktreeConfigMain verifies repos that enable git's
+// worktreeConfig extension (e.g. via sparse-checkout) can still be opened.
+// Plain go-git rejects the extension, so Open must fall back to the
+// extension-tolerant path and still see existing tags.
+func TestRepository_Open_WorktreeConfigMain(t *testing.T) {
+	dir := t.TempDir()
+	initRealGitRepo(t, dir)
+	runGit(t, dir, "config", "extensions.worktreeConfig", "true")
+	createTag(t, dir, "v1.2.3", "release")
+
+	repo, err := Open(dir)
+	require.NoError(t, err)
+	require.NotNil(t, repo)
+
+	tags, err := repo.ListTags()
+	require.NoError(t, err)
+	assert.Len(t, tags, 1)
+}
+
+// TestRepository_Open_WorktreeConfigLinked verifies that opening from inside a
+// linked worktree of a worktreeConfig repo resolves the common git directory,
+// so tags stored in the main repo remain visible.
+func TestRepository_Open_WorktreeConfigLinked(t *testing.T) {
+	dir := t.TempDir()
+	initRealGitRepo(t, dir)
+	runGit(t, dir, "config", "extensions.worktreeConfig", "true")
+	createTag(t, dir, "v1.2.3", "release")
+
+	linked := filepath.Join(t.TempDir(), "linked")
+	runGit(t, dir, "worktree", "add", linked)
+
+	repo, err := Open(linked)
+	require.NoError(t, err)
+	require.NotNil(t, repo)
+
+	tags, err := repo.ListTags()
+	require.NoError(t, err)
+	assert.Len(t, tags, 1, "linked worktree should see tags from the common store")
+}
+
 // Helper to find git root directory
 func findGitRoot(dir string) string {
 	for {

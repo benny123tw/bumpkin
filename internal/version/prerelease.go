@@ -6,6 +6,13 @@ import (
 	"strings"
 )
 
+// Prerelease type identifiers used throughout the codebase.
+const (
+	PrereleaseAlpha = "alpha"
+	PrereleaseBeta  = "beta"
+	PrereleaseRC    = "rc"
+)
+
 // ParsePrerelease parses a prerelease string (e.g., "alpha.0") into type and number
 func ParsePrerelease(prerelease string) (string, int, error) {
 	if prerelease == "" {

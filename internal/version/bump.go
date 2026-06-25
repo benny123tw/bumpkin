@@ -88,11 +88,11 @@ func Bump(v Version, bumpType BumpType) Version {
 	case BumpRelease:
 		return BumpToRelease(v)
 	case BumpPrereleaseAlpha:
-		return BumpPrerelease(v, "alpha")
+		return BumpPrerelease(v, PrereleaseAlpha)
 	case BumpPrereleaseBeta:
-		return BumpPrerelease(v, "beta")
+		return BumpPrerelease(v, PrereleaseBeta)
 	case BumpPrereleaseRC:
-		return BumpPrerelease(v, "rc")
+		return BumpPrerelease(v, PrereleaseRC)
 	case BumpCustom:
 		// Custom versions are handled separately
 		return v

@@ -63,39 +63,39 @@ func createPrereleaseOptions(current version.Version, prefix string) []VersionOp
 
 		// Show option to increment current prerelease type
 		switch preType {
-		case "alpha":
+		case version.PrereleaseAlpha:
 			options = append(options, VersionOption{
-				Label:       "alpha",
+				Label:       version.PrereleaseAlpha,
 				Description: "Increment alpha version",
 				BumpType:    version.BumpPrereleaseAlpha,
 				NewVersion: version.Bump(current, version.BumpPrereleaseAlpha).
 					StringWithPrefix(prefix),
 			})
 			options = append(options, VersionOption{
-				Label:       "beta",
+				Label:       version.PrereleaseBeta,
 				Description: "Promote to beta",
 				BumpType:    version.BumpPrereleaseBeta,
 				NewVersion: version.Bump(current, version.BumpPrereleaseBeta).
 					StringWithPrefix(prefix),
 			})
-		case "beta":
+		case version.PrereleaseBeta:
 			options = append(options, VersionOption{
-				Label:       "beta",
+				Label:       version.PrereleaseBeta,
 				Description: "Increment beta version",
 				BumpType:    version.BumpPrereleaseBeta,
 				NewVersion: version.Bump(current, version.BumpPrereleaseBeta).
 					StringWithPrefix(prefix),
 			})
 			options = append(options, VersionOption{
-				Label:       "rc",
+				Label:       version.PrereleaseRC,
 				Description: "Promote to release candidate",
 				BumpType:    version.BumpPrereleaseRC,
 				NewVersion: version.Bump(current, version.BumpPrereleaseRC).
 					StringWithPrefix(prefix),
 			})
-		case "rc":
+		case version.PrereleaseRC:
 			options = append(options, VersionOption{
-				Label:       "rc",
+				Label:       version.PrereleaseRC,
 				Description: "Increment release candidate",
 				BumpType:    version.BumpPrereleaseRC,
 				NewVersion: version.Bump(current, version.BumpPrereleaseRC).
@@ -113,7 +113,7 @@ func createPrereleaseOptions(current version.Version, prefix string) []VersionOp
 	} else {
 		// For stable releases, show alpha option
 		options = append(options, VersionOption{
-			Label:       "alpha",
+			Label:       version.PrereleaseAlpha,
 			Description: "Start new alpha prerelease",
 			BumpType:    version.BumpPrereleaseAlpha,
 			NewVersion: version.Bump(current, version.BumpPrereleaseAlpha).
