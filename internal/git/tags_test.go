@@ -150,6 +150,8 @@ func initRealGitRepo(t *testing.T, dir string) {
 	runGit(t, dir, "init")
 	runGit(t, dir, "config", "user.email", "test@example.com")
 	runGit(t, dir, "config", "user.name", "Test User")
+	runGit(t, dir, "config", "commit.gpgSign", "false")
+	runGit(t, dir, "config", "tag.gpgSign", "false")
 
 	// Create initial commit
 	testFile := filepath.Join(dir, "README.md")

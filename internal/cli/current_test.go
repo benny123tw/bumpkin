@@ -105,6 +105,11 @@ func TestCurrentCommand_NoTags(t *testing.T) {
 	gitCmd = exec.CommandContext(ctx, "git", "config", "user.name", "Test")
 	require.NoError(t, gitCmd.Run())
 
+	// Keep the fixture independent of the developer's global commit-signing
+	// configuration. The temporary repository does not need a signed commit.
+	gitCmd = exec.CommandContext(ctx, "git", "config", "commit.gpgSign", "false")
+	require.NoError(t, gitCmd.Run())
+
 	// Create a file and commit it
 	require.NoError(t, os.WriteFile("test.txt", []byte("test"), 0o600))
 

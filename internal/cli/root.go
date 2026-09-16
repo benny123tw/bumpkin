@@ -84,6 +84,7 @@ Run without flags for interactive mode, or use flags for automation.`,
 	rootCmd.AddCommand(newVersionCommand(info).cmd)
 	rootCmd.AddCommand(newCurrentCommand().cmd)
 	rootCmd.AddCommand(newInitCommand().cmd)
+	rootCmd.AddCommand(newUpdateCommand(info).cmd)
 
 	c.cmd = rootCmd
 	return c
