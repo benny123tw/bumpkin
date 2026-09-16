@@ -147,7 +147,7 @@ Run `spectra analyze <change-name> --json` to check cross-artifact consistency (
 
 When the change has been dormant for more than 5 days AND the change directory has had zero commits in the past 3 days, surface a drift report before tasks begin — the change is likely out-of-sync with the current codebase.
 
-Detect dormancy from `.openspec.yaml` `created` and `git log -1 --format=%at -- docs/specs/changes/<name>/`:
+Detect dormancy from `.openspec.yaml` `created` and `git log -1 --format=%at -- openspec/changes/<name>/`:
 
 - **Both conditions met**: run `spectra drift <change-name>`, display the report, then use the **AskUserQuestion tool**:
   - **Continue with apply** — proceed to tasks (recommended for Light drift)

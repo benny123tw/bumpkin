@@ -9,23 +9,20 @@ metadata:
   generatedBy: "Spectra"
 ---
 
-Update an existing Spectra change — from a plan file or conversation context.
-
-This tool uses conversation context to update artifacts (no plan file directory). Otherwise, use conversation context to update artifacts.
+Update an existing Spectra change from an explicit plan file or conversation context.
 
 **Prerequisites**: This skill requires the `spectra` CLI. If any `spectra` command fails with "command not found" or similar, report the error and STOP.
 
-**Input**: Optionally specify a plan file path or name.
+**Input**: Optionally specify an explicit plan file path.
 
-- `$spectra-ingest agile-discovering-rocket.md`
-- `$spectra-ingest agile-discovering-rocket`
-- `$spectra-ingest` (use conversation context or auto-detect plan file)
+- `$spectra-ingest /path/to/agile-discovering-rocket.md`
+- `$spectra-ingest` (use conversation context or a plan file path already mentioned there)
 
 **Steps**
 
 1. **Locate the requirement source**
 
-   a. **Argument provided** → treat as plan file reference (prepend `` and append `.md` if needed)
+   a. **Argument provided** → treat it as the exact plan file path
    - If the file exists → use it as the plan file source, proceed to Step 2
    - If the file does NOT exist → report the error and **stop**
 
@@ -37,13 +34,7 @@ This tool uses conversation context to update artifacts (no plan file directory)
    - If the user picks plan file → proceed to Step 2
    - If the user picks conversation context → skip Step 2, go to Step 3
 
-   c. **No argument, no plan file detectable**:
-   - Check `` for recent files
-   - If recent files exist → list 5 most recent with the **AskUserQuestion tool**, include "Use conversation context" as an additional option
-   - If the user picks a file → proceed to Step 2
-   - If the user picks conversation context → skip Step 2, go to Step 3
-
-   d. **Conversation context fallback** (no plan files found at all):
+   c. **Conversation context fallback** (no plan file path found):
    - Use conversation context to update artifacts
    - If conversation context is insufficient, use the **AskUserQuestion tool** to get more details
    - Warn: "No plan file found. Using conversation context."

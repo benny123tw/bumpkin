@@ -11,7 +11,7 @@ metadata:
 
 Detect drift between a Spectra change and the current codebase state. Reports time dormancy, broken design anchors, task collisions with external commits, and a single recommended next command.
 
-**Input**: Optionally specify a change name (e.g., `/spectra-drift add-auth`). If omitted, infer from conversation context or auto-select if only one active change exists.
+**Input**: Optionally specify a change name (e.g., `$spectra-drift add-auth`). If omitted, infer from conversation context or auto-select if only one active change exists.
 
 **Prerequisites**: This skill requires the `spectra` CLI. If any `spectra` command fails with "command not found" or similar, report the error and STOP.
 
@@ -74,24 +74,24 @@ Detect drift between a Spectra change and the current codebase state. Reports ti
 
 4. **Apply the recommendation interactively**
 
-   Use the **AskUserQuestion tool** to offer one decision based on `severity`. Use plain-language option labels while preserving the exact command in each option description. Do NOT auto-invoke `/spectra-apply`, `/spectra-ingest`, or `spectra archive`; always wait for the user's choice.
+   Use the **AskUserQuestion tool** to offer one decision based on `severity`. Use plain-language option labels while preserving the exact command in each option description. Do NOT auto-invoke `$spectra-apply`, `$spectra-ingest`, or `spectra archive`; always wait for the user's choice.
    - **Light** (score 0-3, drift is minor):
      - Recommended label: "Directly start work"
-       - Description: run `/spectra-apply <name>`
+       - Description: run `$spectra-apply <name>`
      - Alternate label: "Pause for now"
        - Description: do nothing until the user reviews manually
    - **Medium** (score 4-8, refresh worth doing):
      - Recommended label: "Refresh the plan"
-       - Description: run `/spectra-ingest <name>` with the broken references and task collisions as context
+       - Description: run `$spectra-ingest <name>` with the broken references and task collisions as context
      - Alternate label: "Directly start work"
-       - Description: run `/spectra-apply <name>` only if the user knows the reported changes are harmless
+       - Description: run `$spectra-apply <name>` only if the user knows the reported changes are harmless
      - Alternate label: "Pause for now"
        - Description: do nothing until the user reviews manually
    - **Heavy** (score >8 or anchor decay >30%, design diverges from code):
      - Recommended label: "Archive and restart"
        - Description: run `<primary_recommendation>`
      - Alternate label: "Refresh the plan"
-       - Description: try `/spectra-ingest <name>` before restarting
+       - Description: try `$spectra-ingest <name>` before restarting
      - Alternate label: "Pause for now"
        - Description: do nothing until the user reviews manually
 
@@ -99,7 +99,7 @@ Detect drift between a Spectra change and the current codebase state. Reports ti
 
 **Passive Trigger**
 
-When `/spectra-apply` is invoked on a change whose `.openspec.yaml created` date is more than 5 days ago AND no commits have touched the change directory in the past 3 days, the apply skill SHOULD run drift analysis first and surface findings before tasks begin. The trigger is guidance only and MUST NOT block apply from proceeding.
+When `$spectra-apply` is invoked on a change whose `.openspec.yaml created` date is more than 5 days ago AND no commits have touched the change directory in the past 3 days, the apply skill SHOULD run drift analysis first and surface findings before tasks begin. The trigger is guidance only and MUST NOT block apply from proceeding.
 
 (Threshold reasoning: AI-assisted commits are daily-cadence, not weekly. A change sitting ≥5 days with ≥3 days of no commits is almost always genuine stagnation rather than normal pacing.)
 

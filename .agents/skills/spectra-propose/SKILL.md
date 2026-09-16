@@ -29,7 +29,7 @@ If no argument is provided, the workflow will extract requirements from conversa
 
    b. **Plan file available**:
    - Check if the conversation context mentions a plan file path (plan mode system messages include the path like `<name>.md`)
-   - If found, check if the file exists at ``
+   - If found, check whether that exact path exists
    - If a plan file is found, use the **AskUserQuestion tool** to ask:
      - Option 1: Use the plan file
      - Option 2: Use conversation context
