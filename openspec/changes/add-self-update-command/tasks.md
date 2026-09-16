@@ -27,3 +27,9 @@
 ## 6. Validation
 
 - [x] 6.1 Run `just check` (tests + lint) and confirm `bumpkin update --help` shows the command, `upgrade` alias, and `--check`/`--yes` flags. Verified by a clean `just check` run and the help output.
+
+## 7. Review follow-up and CI security
+
+- [x] 7.1 Resolve the executable symlink to its canonical target before the package-manager guard and replacement so managed installations cannot be overwritten through a launcher symlink. Verify with a test whose executable seam returns a symlink path and asserts both the guard and replacement receive only the canonical target.
+- [x] 7.2 Distinguish an existing GitHub release with no matching host asset from an absent release: the former returns a descriptive non-zero error while the latter retains the existing no-release result. Verify both states with HTTP-backed source tests and command-level assertions.
+- [x] 7.3 Implement "Use the GitHub API with a focused replacement primitive": replace the reachable `go-selfupdate` OpenPGP dependency with direct GitHub release discovery, SHA-256 checksum verification, and the narrow `minio/selfupdate` replacement primitive; upgrade `go-git`, `go-billy`, and `x/text` to fixed versions. Verify with `just check`, `govulncheck ./...` on a patched supported Go toolchain, and a live `bumpkin update --check` release lookup.

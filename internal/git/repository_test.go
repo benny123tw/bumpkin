@@ -20,7 +20,9 @@ func TestRepository_Open(t *testing.T) {
 	repo, err := Open(tmpDir)
 	require.NoError(t, err)
 	assert.NotNil(t, repo)
-	assert.Equal(t, tmpDir, repo.Path)
+	canonicalTmpDir, err := filepath.EvalSymlinks(tmpDir)
+	require.NoError(t, err)
+	assert.Equal(t, canonicalTmpDir, repo.Path)
 }
 
 // T015: Test for repository not found error

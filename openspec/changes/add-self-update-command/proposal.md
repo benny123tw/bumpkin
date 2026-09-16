@@ -13,7 +13,7 @@ Bumpkin is distributed as a standalone binary via GitHub Releases (and `go insta
 - Detect non-upgradable installs and refuse gracefully with guidance:
   - Development builds with missing or unparseable version metadata (for example a local `go build`) — no release to compare against.
   - Print a clear message rather than attempting a replacement that would fail.
-- Add the `github.com/creativeprojects/go-selfupdate` dependency to handle release discovery, OS/arch asset matching, checksum validation, and safe cross-platform binary replacement.
+- Query the GitHub Releases API directly, validate the selected asset against `checksums.txt`, and use `github.com/minio/selfupdate` only for safe cross-platform binary replacement. This avoids importing the unmaintained `golang.org/x/crypto/openpgp` path pulled in by `github.com/creativeprojects/go-selfupdate`.
 
 ## Non-Goals
 
@@ -37,6 +37,6 @@ Bumpkin is distributed as a standalone binary via GitHub Releases (and `go insta
 - Affected specs: `self-update` (new)
 - Affected code:
   - New: `internal/cli/update.go`, `internal/cli/update_test.go`
-  - Modified: `internal/cli/root.go` (register the new subcommand), `go.mod`, `go.sum` (add `github.com/creativeprojects/go-selfupdate`)
+  - Modified: `internal/cli/root.go` (register the new subcommand), `go.mod`, `go.sum` (add `github.com/minio/selfupdate` and security updates)
   - Removed: (none)
-- Dependencies: adds `github.com/creativeprojects/go-selfupdate` (transitively `github.com/minio/selfupdate`) and its required transitive dependencies.
+- Dependencies: adds `github.com/minio/selfupdate`, updates vulnerable `go-git`, `go-billy`, and `x/text` versions, and removes `github.com/creativeprojects/go-selfupdate` plus its provider-client dependency tree.

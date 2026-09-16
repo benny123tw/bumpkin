@@ -95,6 +95,17 @@ The command SHALL detect installs that cannot be safely self-replaced and SHALL 
 - **WHEN** the resolved executable path is not writable or resides under a known package-manager prefix
 - **THEN** the command advises using the appropriate package manager (for example `brew upgrade`) instead of self-replacing, and does not attempt to replace the binary
 
+#### Scenario: Package-manager target reached through a symlink
+
+- **WHEN** the command is launched through a symlink whose canonical target resides under a known package-manager prefix
+- **THEN** the command evaluates the canonical target, advises using the package manager, and does not replace either the symlink or target
+
+##### Example: Homebrew launcher symlink
+
+- **GIVEN** `/usr/local/bin/bumpkin` is a symlink to `/opt/homebrew/Cellar/bumpkin/1.3.0/bin/bumpkin`
+- **WHEN** the user runs `bumpkin update` through `/usr/local/bin/bumpkin`
+- **THEN** the command detects the canonical Homebrew target and refuses self-replacement
+
 ### Requirement: Integrity verification and safe failure
 
 The command SHALL verify the downloaded asset against the release `checksums.txt` before replacement, and SHALL leave the existing binary untouched when any step fails.
@@ -109,3 +120,8 @@ The command SHALL verify the downloaded asset against the release `checksums.txt
 - **GIVEN** bumpkin v1.2.0 is installed and GitHub publishes v1.3.0 with a checksum that does not match the downloaded asset
 - **WHEN** the user confirms `bumpkin update`
 - **THEN** the command reports the checksum verification failure, exits non-zero, and the installed v1.2.0 binary remains unchanged
+
+#### Scenario: No asset matches the host platform
+
+- **WHEN** the latest release exists but contains no asset matching the host OS and architecture
+- **THEN** the command returns a descriptive error, leaves the running binary unchanged, and exits non-zero

@@ -3,7 +3,13 @@ package cli
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -22,6 +28,7 @@ type fakeSource struct {
 
 	latestCalls  int
 	replaceCalls int
+	replacePath  string
 }
 
 func (f *fakeSource) Latest(_ context.Context) (*release, bool, error) {
@@ -29,8 +36,9 @@ func (f *fakeSource) Latest(_ context.Context) (*release, bool, error) {
 	return f.rel, f.found, f.latestErr
 }
 
-func (f *fakeSource) Replace(_ context.Context, _ *release, _ string) error {
+func (f *fakeSource) Replace(_ context.Context, _ *release, exePath string) error {
 	f.replaceCalls++
+	f.replacePath = exePath
 	return f.replaceErr
 }
 
@@ -41,6 +49,7 @@ func newTestUpdateCommand(t *testing.T, version string, src updateSource) *updat
 	c := newUpdateCommand(BuildInfo{Version: version})
 	c.source = src
 	c.executable = func() (string, error) { return "/tmp/bumpkin", nil }
+	c.resolvePath = func(path string) (string, error) { return path, nil }
 	c.blockPath = func(string) (string, bool) { return "", false }
 	return c
 }
@@ -109,7 +118,9 @@ func TestUpdateCommand_PathGuard(t *testing.T) {
 		rel:   &release{version: "1.2.0"},
 	}
 	c := newTestUpdateCommand(t, "1.0.0", src)
-	c.blockPath = func(string) (string, bool) { return "the binary at /usr/bin/bumpkin is not writable", true }
+	c.blockPath = func(string) (string, bool) {
+		return "the binary at /usr/bin/bumpkin is not writable", true
+	}
 
 	out, err := runUpdate(t, c, "")
 
@@ -117,6 +128,28 @@ func TestUpdateCommand_PathGuard(t *testing.T) {
 	assert.Equal(t, 0, src.replaceCalls, "must not replace a blocked binary")
 	assert.Contains(t, out, "Cannot self-update")
 	assert.Contains(t, out, "brew upgrade")
+}
+
+func TestUpdateCommand_ResolvesExecutableBeforeGuardAndReplace(t *testing.T) {
+	src := &fakeSource{found: true, rel: &release{version: "1.2.0"}}
+	c := newTestUpdateCommand(t, "1.0.0", src)
+	c.executable = func() (string, error) { return "/usr/local/bin/bumpkin", nil }
+	c.resolvePath = func(path string) (string, error) {
+		assert.Equal(t, "/usr/local/bin/bumpkin", path)
+		return "/opt/homebrew/Cellar/bumpkin/1.2.0/bin/bumpkin", nil
+	}
+
+	var guardedPath string
+	c.blockPath = func(path string) (string, bool) {
+		guardedPath = path
+		return "", false
+	}
+
+	_, err := runUpdate(t, c, "", "--yes")
+
+	require.NoError(t, err)
+	assert.Equal(t, "/opt/homebrew/Cellar/bumpkin/1.2.0/bin/bumpkin", guardedPath)
+	assert.Equal(t, guardedPath, src.replacePath)
 }
 
 func TestDefaultPathBlocker_PackageManager(t *testing.T) {
@@ -179,7 +212,7 @@ func TestSelectAsset(t *testing.T) {
 	assert.False(t, ok, "unknown os/arch should not match")
 }
 
-func TestUpdaterConfig_PlatformAssetFilter(t *testing.T) {
+func TestPlatformAssetFilter(t *testing.T) {
 	assets := []string{
 		"bumpkin-1.3.0-darwin-amd64",
 		"bumpkin-1.3.0-darwin-arm64",
@@ -199,15 +232,125 @@ func TestUpdaterConfig_PlatformAssetFilter(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.goos+"/"+tc.goarch, func(t *testing.T) {
-			cfg := updaterConfig(tc.goos, tc.goarch)
-			require.Len(t, cfg.Filters, 1)
-
-			filter := regexp.MustCompile(cfg.Filters[0])
+			filter := regexp.MustCompile(platformAssetFilter(tc.goos, tc.goarch))
 			for _, asset := range assets {
 				assert.Equalf(t, asset == tc.want, filter.MatchString(asset), "asset %q", asset)
 			}
 		})
 	}
+}
+
+func TestGitHubSourceLatest_NoRelease(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	t.Cleanup(server.Close)
+
+	src := githubSource{
+		client:    server.Client(),
+		latestURL: server.URL,
+		goos:      "linux",
+		goarch:    "arm64",
+	}
+
+	rel, found, err := src.Latest(context.Background())
+
+	require.NoError(t, err)
+	assert.False(t, found)
+	assert.Nil(t, rel)
+}
+
+func TestGitHubSourceLatest_NoMatchingPlatformAsset(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{
+  "tag_name": "v1.3.0",
+  "assets": [
+    {"name": "bumpkin-1.3.0-darwin-arm64", "browser_download_url": "https://example.invalid/darwin"},
+    {"name": "checksums.txt", "browser_download_url": "https://example.invalid/checksums"}
+  ]
+}`)
+	}))
+	t.Cleanup(server.Close)
+
+	src := githubSource{
+		client:    server.Client(),
+		latestURL: server.URL,
+		goos:      "linux",
+		goarch:    "arm64",
+	}
+
+	rel, found, err := src.Latest(context.Background())
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "no release asset for linux/arm64")
+	assert.False(t, found)
+	assert.Nil(t, rel)
+}
+
+func TestGitHubSourceLatest_SelectsPlatformAsset(t *testing.T) {
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, `{
+  "tag_name": "v1.3.0",
+  "assets": [
+    {"name": "bumpkin-1.3.0-darwin-arm64", "browser_download_url": %q},
+    {"name": "bumpkin-1.3.0-linux-arm64", "browser_download_url": %q},
+    {"name": "checksums.txt", "browser_download_url": %q}
+  ]
+}`, server.URL+"/darwin", server.URL+"/binary", server.URL+"/checksums")
+	}))
+	t.Cleanup(server.Close)
+
+	src := githubSource{
+		client:    server.Client(),
+		latestURL: server.URL,
+		goos:      "linux",
+		goarch:    "arm64",
+	}
+
+	rel, found, err := src.Latest(context.Background())
+
+	require.NoError(t, err)
+	require.True(t, found)
+	require.NotNil(t, rel)
+	assert.Equal(t, "v1.3.0", rel.version)
+	assert.Equal(t, "bumpkin-1.3.0-linux-arm64", rel.assetName)
+	assert.Equal(t, server.URL+"/binary", rel.assetURL)
+	assert.Equal(t, server.URL+"/checksums", rel.checksumURL)
+}
+
+func TestGitHubSourceReplace_ChecksumMismatchLeavesBinaryUntouched(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/binary":
+			fmt.Fprint(w, "new binary")
+		case "/checksums":
+			fmt.Fprintln(w, strings.Repeat("0", sha256.Size*2), " bumpkin-1.3.0-linux-amd64")
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	exePath := filepath.Join(t.TempDir(), "bumpkin")
+	//nolint:gosec // The updater requires an executable test fixture.
+	require.NoError(t, os.WriteFile(exePath, []byte("old binary"), 0o755))
+	src := githubSource{client: server.Client()}
+	rel := &release{
+		assetName:   "bumpkin-1.3.0-linux-amd64",
+		assetURL:    server.URL + "/binary",
+		checksumURL: server.URL + "/checksums",
+	}
+
+	err := src.Replace(context.Background(), rel, exePath)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "checksum")
+	contents, readErr := os.ReadFile(exePath)
+	require.NoError(t, readErr)
+	assert.Equal(t, "old binary", string(contents))
 }
 
 // Task 8 (5.1): --check reports status without replacing.

@@ -27,27 +27,28 @@ Bumpkin ships as a standalone binary. Releases are built by GoReleaser (`.gorele
 
 ## Decisions
 
-### Use go-selfupdate for release discovery and binary replacement
+### Use the GitHub API with a focused replacement primitive
 
-Use `github.com/creativeprojects/go-selfupdate` (maintained successor to `rhysd/go-github-selfupdate`). It queries the GitHub Releases API, selects the asset matching the host OS/arch, validates against `checksums.txt`, and uses its built-in cross-platform replacement logic.
+Query GitHub's latest-release endpoint with `net/http`, select the platform asset, download `checksums.txt`, verify SHA-256, and pass the verified binary to `github.com/minio/selfupdate` for cross-platform replacement. The earlier `github.com/creativeprojects/go-selfupdate` choice was rejected after `govulncheck` demonstrated that importing its root package reaches the unmaintained `golang.org/x/crypto/openpgp` implementation (GO-2026-5932), for which no fixed version exists.
 
 Alternatives considered:
-- `minio/selfupdate` directly — only does the byte-level replacement; we would have to hand-write GitHub API calls, OS/arch asset matching, version compare, and checksum parsing. Rejected as re-implementing go-selfupdate.
-- Hand-rolled `net/http` against the GitHub API — same drawback, plus more surface area to maintain and test. Rejected.
+- Keep `github.com/creativeprojects/go-selfupdate` and suppress GO-2026-5932 — rejected because suppression would hide a reachable dependency risk.
+- Copy the replacement implementation into bumpkin — rejected because `minio/selfupdate` already provides the narrow byte-replacement primitive without importing OpenPGP symbols.
+- Use a full GitHub SDK — rejected because the latest-release response and two asset downloads require only a small JSON shape and standard HTTP behavior.
 
 ### Configure the asset matcher for GoReleaser's binary naming
 
-go-selfupdate's default asset filtering targets archive-style names. Because bumpkin publishes raw binaries, configure the updater with an explicit `Filters`/asset-matching regex anchored to the current runtime platform: `^bumpkin-.*-{runtime.GOOS}-{runtime.GOARCH}$` on Unix-like systems and the equivalent pattern ending in `\.exe` on Windows. In go-selfupdate, a non-empty `Filters` list replaces the library's built-in OS/architecture suffix matching, so a broad product-only filter such as `^bumpkin-.*$` is unsafe: it can select the first asset for another platform. The platform-specific filter must uniquely match the host binary and exclude `checksums.txt`. `amd64` maps directly; verify `arm64` (Apple Silicon, linux/arm64) and the Windows executable suffix resolve. The updater is pointed at the `benny123tw/bumpkin` repository slug.
+Select assets with an anchored regex derived from the target platform: `^bumpkin-.*-{runtime.GOOS}-{runtime.GOARCH}$` on Unix-like systems and the equivalent pattern ending in `\.exe` on Windows. The platform-specific matcher must uniquely select the host binary and exclude `checksums.txt`; absence of a matching host asset is an error rather than "no release found." `amd64` maps directly; verify `arm64` (Apple Silicon, linux/arm64) and the Windows executable suffix resolve. The source is pointed at the `benny123tw/bumpkin` repository slug.
 
 ### Version source and comparison
 
-Read the current version from the `BuildInfo` passed into the command (same value `bumpkin version` prints). Strip a leading `v` as needed and let go-selfupdate's semver comparison decide whether the latest release is newer. If the latest release is not newer than the current version, report "already up to date" and exit 0 without downloading.
+Read the current version from the `BuildInfo` passed into the command (same value `bumpkin version` prints). Parse both current and release tag versions through the existing version package. If the latest release is not newer than the current version, report "already up to date" and exit 0 without downloading.
 
 ### Guard non-upgradable installs before attempting replacement
 
 Before contacting GitHub, detect and refuse with guidance when:
 - The version is missing, `unknown`, `dev`, or otherwise not valid semver — instruct the user to install a released binary or use `go install ...@latest`.
-- The resolved executable path is not writable, or sits under a known package-manager prefix (e.g. a Homebrew Cellar/`bin` path) — instruct the user to use their package manager (`brew upgrade bumpkin`) instead of self-replacing.
+- The canonical executable path is not writable, or sits under a known package-manager prefix (e.g. a Homebrew Cellar path) — instruct the user to use their package manager (`brew upgrade bumpkin`) instead of self-replacing. Resolve symlinks before this guard and before replacement so a launcher symlink cannot hide a managed target.
 
 These checks produce a clear message and a non-zero exit only on genuine error; an intentional "use your package manager" refusal is communicated explicitly.
 
@@ -78,7 +79,7 @@ These checks produce a clear message and a non-zero exit only on genuine error; 
 
 - Development build (`version == "unknown"`): print guidance, return a non-nil error (or exit non-zero) indicating self-update is unavailable for dev builds.
 - Package-manager / non-writable binary path: print the package-manager guidance and exit without attempting replacement.
-- Network/API failure, no matching asset, or checksum mismatch: return a wrapped error (`fmt.Errorf("...: %w", err)`) surfaced through the existing root error handling; the binary is left untouched.
+- Network/API failure, no matching host asset, symlink-resolution failure, or checksum mismatch: return a wrapped error (`fmt.Errorf("...: %w", err)`) surfaced through the existing root error handling; the binary is left untouched.
 
 **Acceptance criteria:**
 
@@ -92,9 +93,9 @@ These checks produce a clear message and a non-zero exit only on genuine error; 
 
 ## Risks / Trade-offs
 
-- [GoReleaser raw-binary naming not matched by go-selfupdate defaults] → Configure an explicit asset-matching filter and add a test/asserted regex; verify against actual release asset names for each supported OS/arch.
-- [A broad custom filter bypasses go-selfupdate's platform matching] → Construct the production filter from the target OS and architecture and test it against a mixed-platform release asset list.
+- [GoReleaser raw-binary naming selects the wrong platform] → Use an explicit asset matcher and verify against actual release asset names for each supported OS/arch.
+- [Launcher symlink hides a package-manager-owned target] → Resolve the executable to its canonical path before checking ownership or replacing it.
 - [arm64 / Apple Silicon asset not selected] → Confirm the OS/arch token mapping the library uses matches the `{os}-{arch}` tokens GoReleaser emits; cover in the asset-matcher decision.
 - [Self-replacement fails on locked/managed binary] → Detect non-writable / package-manager paths up front and refuse with guidance rather than producing a partial write.
-- [New transitive dependency surface] → go-selfupdate pulls in provider API clients and related dependencies; run `go mod tidy` and `just check` to confirm the tree builds and lints cleanly.
+- [Dependency vulnerabilities block CI] → Keep the replacement dependency narrow, update modules with fixed releases, and require a clean `govulncheck ./...` on CI's supported Go toolchain.
 - [Network/API rate limits without auth] → Unauthenticated GitHub API is sufficient for a single release check; document that repeated checks may hit anonymous rate limits.
