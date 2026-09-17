@@ -45,7 +45,7 @@ func TestRunHook_EnvironmentVariables(t *testing.T) {
 
 	// Test that env vars are set by checking exit code of a test command
 	var cmd string
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == windowsOS {
 		cmd = "if \"%BUMPKIN_VERSION%\"==\"1.2.3\" exit 0"
 	} else {
 		cmd = "test \"$BUMPKIN_VERSION\" = \"1.2.3\""
@@ -307,7 +307,7 @@ func TestRunHookStreaming_StdoutStderrSeparation(t *testing.T) {
 
 	// Command that writes to both stdout and stderr (platform-specific)
 	var cmd string
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == windowsOS {
 		cmd = "echo stdout_line & echo stderr_line 1>&2"
 	} else {
 		cmd = "echo stdout_line && echo stderr_line >&2"

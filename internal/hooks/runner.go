@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+const windowsOS = "windows"
+
 // RunHook executes a single hook and returns the result
 func RunHook(ctx context.Context, hook Hook, hookCtx *HookContext) *HookResult {
 	return RunHookWithOutput(ctx, hook, hookCtx, os.Stdout, os.Stderr)
@@ -41,7 +43,7 @@ func RunHookWithOutput(
 	// Create command
 	// Note: G204 is expected here - hooks are user-defined commands from config
 	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == windowsOS {
 		//nolint:gosec // User-defined hook command from config file
 		cmd = exec.CommandContext(ctx, "cmd", "/C", hook.Command)
 	} else {
@@ -155,7 +157,7 @@ func RunHookStreaming(
 
 		// Create command
 		var cmd *exec.Cmd
-		if runtime.GOOS == "windows" {
+		if runtime.GOOS == windowsOS {
 			//nolint:gosec // User-defined hook command from config file
 			cmd = exec.CommandContext(ctx, "cmd", "/C", hook.Command)
 		} else {
